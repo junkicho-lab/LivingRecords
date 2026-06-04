@@ -3,6 +3,7 @@ import SwiftUI
 // S1 셸 — 4탭. 빈 영역 가로 스와이프로 옆 탭 이동(목록 행 스와이프와 충돌 안 하게 배경에만).
 struct ContentView: View {
     @State private var tab = 0
+    @Environment(AppLaunchState.self) private var launch    // S12 — 트리거 시 포착 탭으로
     private let tabCount = 4
 
     var body: some View {
@@ -19,6 +20,12 @@ struct ContentView: View {
             DigestListView()
                 .tabSwipe($tab, count: tabCount)
                 .tabItem { Label("정리", systemImage: "doc.text") }.tag(3)
+        }
+        .onChange(of: launch.startCapture) { _, requested in
+            if requested { tab = 0 }   // 트리거되면 포착 탭으로(자동 녹음은 CaptureView가 처리)
+        }
+        .onAppear {
+            if launch.startCapture { tab = 0 }   // 콜드 런치 대비
         }
     }
 }

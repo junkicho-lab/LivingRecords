@@ -5,6 +5,7 @@ import SwiftData
 struct CaptureView: View {
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
+    @Environment(AppLaunchState.self) private var launch    // S12 — 트리거 자동 녹음
     @State private var recorder = AudioRecorder()
     @State private var draft = ""
     @State private var status = ""
@@ -107,6 +108,18 @@ struct CaptureView: View {
         }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        .onChange(of: launch.startCapture) { _, requested in
+            if requested { Task { await handleLaunchCapture() } }
+        }
+        .onAppear { Task { await handleLaunchCapture() } }   // 콜드 런치 대비
+    }
+
+    // S12 — App Intent/액션버튼/Siri 트리거로 들어오면 봉인 모드 맞추고 바로 녹음 시작.
+    private func handleLaunchCapture() async {
+        guard launch.startCapture else { return }
+        sealNext = launch.startSealed
+        launch.startCapture = false        // 소비(중복 방지)
+        if !recorder.isRecording { await toggleRecord() }
     }
 
     private func timeString(_ t: TimeInterval) -> String {
