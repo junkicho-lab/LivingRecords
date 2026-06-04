@@ -1,12 +1,12 @@
 import SwiftUI
 
-// S0 셸 — 자리표시 탭. 슬라이스에서 실제 화면으로 교체.
+// S1 셸 — 포착/기록은 실제 화면, 주제/정리는 자리표시.
 struct ContentView: View {
     var body: some View {
         TabView {
-            Text("포착 (S1)")
+            CaptureView()
                 .tabItem { Label("포착", systemImage: "mic.circle") }
-            Text("기록 (S1)")
+            CaptureListView()
                 .tabItem { Label("기록", systemImage: "list.bullet") }
             Text("주제 (S4)")
                 .tabItem { Label("주제", systemImage: "circle.grid.cross") }
