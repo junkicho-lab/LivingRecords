@@ -26,18 +26,15 @@ struct ContentView: View {
 extension View {
     /// 빈 영역(배경) 가로 스와이프로 인접 탭 전환. 좌→다음, 우→이전.
     func tabSwipe(_ selection: Binding<Int>, count: Int) -> some View {
-        background(
-            Color.clear
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 40)
-                        .onEnded { v in
-                            guard abs(v.translation.width) > abs(v.translation.height),
-                                  abs(v.translation.width) > 60 else { return }
-                            let dir = v.translation.width < 0 ? 1 : -1
-                            selection.wrappedValue = max(0, min(count - 1, selection.wrappedValue + dir))
-                        }
-                )
+        // 전체 영역 가로 스와이프(세로 스크롤과 구분: 가로가 1.5배 이상 + 70pt↑). 행은 길게누르기로 동작.
+        simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { v in
+                    guard abs(v.translation.width) > abs(v.translation.height) * 1.5,
+                          abs(v.translation.width) > 70 else { return }
+                    let dir = v.translation.width < 0 ? 1 : -1
+                    selection.wrappedValue = max(0, min(count - 1, selection.wrappedValue + dir))
+                }
         )
     }
 }

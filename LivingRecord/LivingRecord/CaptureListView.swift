@@ -37,12 +37,14 @@ struct CaptureListView: View {
                         }
                     }
                     .padding(.vertical, 2)
-                    .swipeActions {
-                        Button("이동") { moveTarget = c; moving = true }.tint(.blue)
+                    .contextMenu {
+                        Button { moveTarget = c; moving = true } label: {
+                            Label("다른 주제로 옮기기", systemImage: "arrow.right.circle")
+                        }
                     }
                 }
                 } header: {
-                    Text("기록을 왼쪽으로 쓸어넘기면 다른 주제로 옮길 수 있어요.")
+                    Text("기록을 길게 눌러 다른 주제로 옮길 수 있어요. (좌우로 쓸면 탭 이동)")
                         .textCase(nil)
                 }
             }

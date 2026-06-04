@@ -26,10 +26,6 @@ struct ThemeListView: View {
                                 Text("\(t.captures.count)").font(.caption).foregroundStyle(.secondary)
                             }
                         }
-                        .swipeActions {
-                            Button("합치기") { mergeSource = t; merging = true }.tint(.orange)
-                            Button("이름") { renameTarget = t; newName = t.name; renaming = true }.tint(.indigo)
-                        }
                         .contextMenu {
                             Button { renameTarget = t; newName = t.name; renaming = true } label: {
                                 Label("이름 변경", systemImage: "pencil")
@@ -42,7 +38,7 @@ struct ThemeListView: View {
                         }
                     }
                 } header: {
-                    Text("주제를 왼쪽으로 쓸거나 길게 눌러 이름 변경·합치기")
+                    Text("주제를 길게 눌러 이름 변경·합치기 (좌우로 쓸면 탭 이동)")
                         .textCase(nil)
                 }
             }
@@ -103,12 +99,14 @@ struct ThemeDetailView: View {
                         Text(c.createdAt, format: .dateTime.month().day().hour().minute())
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    .swipeActions {
-                        Button("이동") { moveTargets = [c]; moving = true }.tint(.blue)
+                    .contextMenu {
+                        Button { moveTargets = [c]; moving = true } label: {
+                            Label("다른 주제로 이동", systemImage: "arrow.right.circle")
+                        }
                     }
                 }
             } header: {
-                Text("왼쪽으로 쓸어 다른 주제로 이동")
+                Text("기록을 길게 눌러 다른 주제로 이동 (좌우로 쓸면 탭 이동)")
                     .textCase(nil)
             }
         }
