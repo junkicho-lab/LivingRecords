@@ -52,6 +52,10 @@ struct WeeklyReviewView: View {
                              + (c.avgEnergy.map { String(format: " · 에너지 %.0f%%", $0 * 100) } ?? "")
                              + energyTrendText(c.energyTrend))
                             .font(.caption).foregroundStyle(.secondary)
+                        if let p = c.precedent {
+                            Label(p, systemImage: "clock.arrow.circlepath")
+                                .font(.caption2).foregroundStyle(.indigo)
+                        }
                         HStack(spacing: 8) {
                             decideButton("지속", .sustain, c, .green)
                             decideButton("보류", .hold, c, .gray)
@@ -76,6 +80,10 @@ struct WeeklyReviewView: View {
                             Text("❄️ \(c.theme.name)").font(.headline)
                             Text("한때 \(c.priorCount)회 · \(c.daysSinceLast)일째 조용")
                                 .font(.caption).foregroundStyle(.secondary)
+                            if let p = c.precedent {
+                                Label(p, systemImage: "clock.arrow.circlepath")
+                                    .font(.caption2).foregroundStyle(.indigo)
+                            }
                             HStack(spacing: 8) {
                                 Button("되살리기") {
                                     WeeklyReview.revive(c.theme, context: context); refresh()

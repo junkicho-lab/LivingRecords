@@ -13,6 +13,7 @@ struct Candidate: Identifiable {
     let momentum: Double     // -1~1: 음수=식어감(냉각), 0=꾸준, 양수=떠오름
     let energyTrend: Double?  // -1~1: 에너지 전→후반 변화(양수=오름)
     let latestVerdict: Verdict?
+    let precedent: String?   // 선례: 전에 이 주제를 어떻게 결정했고 그 뒤 어땠나
     var id: PersistentIdentifier { theme.persistentModelID }
 
     enum Trend { case rising, steady, cooling }   // 떠오름/꾸준/식어감
@@ -34,7 +35,24 @@ struct Cooling: Identifiable {
     let priorCount: Int        // 직전 기간(창 앞 2주) 포착 수 — 한때의 뜨거움
     let recentCount: Int       // 최근 창 포착 수 — 식음 정도
     let daysSinceLast: Int     // 마지막 포착 이후 경과일
+    let precedent: String?     // 선례
     var id: PersistentIdentifier { theme.persistentModelID }
+}
+
+// 선례 — 한 주제를 전에 어떻게 결정했고 그 뒤 어땠나. 결정 순간에 '전에도 여기 와봤다'를 보여준다.
+enum Precedent {
+    @MainActor
+    static func line(decisions: [Decision], themeCaptures: [Capture], now: Date) -> String? {
+        guard !decisions.isEmpty else { return nil }
+        let sorted = decisions.sorted { $0.createdAt < $1.createdAt }
+        let last = sorted[sorted.count - 1]
+        let after = themeCaptures.filter { $0.createdAt > last.createdAt }.count
+        let days = Calendar.current.dateComponents([.day], from: last.createdAt, to: now).day ?? 0
+        var s = "\(days)일 전 ‘\(PeriodReview.verdictLabel(last.verdict))’ 결정"
+        if sorted.count >= 2 { s += " (\(sorted.count)번째)" }
+        s += after > 0 ? " → 그 뒤 \(after)회 더" : " → 그 뒤 잠잠"
+        return s
+    }
 }
 
 // S10 — 연결: 주제 중심끼리 가까운 쌍. 강도 티어 + '이번 주 새로 가까워진' 강조 + 한 줄기로 묶기.
@@ -70,16 +88,17 @@ enum WeeklyReview {
         let earlierDays = max(1, windowDays - recentDays)
         let recentStart = cal.date(byAdding: .day, value: -recentDays, to: today) ?? windowStart
         let themes = (try? context.fetch(FetchDescriptor<Theme>())) ?? []
-        // 주제별 최신 결정
+        // 주제별 결정 이력(선례용) + 최신 결정
         let decisions = (try? context.fetch(FetchDescriptor<Decision>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
-        var latestByTheme: [PersistentIdentifier: Verdict] = [:]
-        for d in decisions { if let t = d.theme { latestByTheme[t.persistentModelID] = d.verdict } }
+        var byTheme: [PersistentIdentifier: [Decision]] = [:]
+        for d in decisions { if let t = d.theme { byTheme[t.persistentModelID, default: []].append(d) } }
+        func latest(_ t: Theme) -> Verdict? { byTheme[t.persistentModelID]?.last?.verdict }
 
         var out: [Candidate] = []
         for t in themes {
             let caps = t.captures.filter { $0.createdAt >= windowStart }
             guard caps.count >= 2 else { continue }
-            let verdict = latestByTheme[t.persistentModelID]
+            let verdict = latest(t)
             if verdict == .drop { continue }   // 접은 주제는 후보에서 제외
             let days = Set(caps.map { cal.startOfDay(for: $0.createdAt) }).count
             let es = caps.compactMap { $0.energy }
@@ -91,10 +110,11 @@ enum WeeklyReview {
             let momentum = (recentRate + earlierRate) > 0
                 ? (recentRate - earlierRate) / (recentRate + earlierRate) : 0
             let (evScore, evolving) = evolutionSignal(caps)
+            let prec = Precedent.line(decisions: byTheme[t.persistentModelID] ?? [], themeCaptures: t.captures, now: now)
             out.append(Candidate(theme: t, days: days, count: caps.count, avgEnergy: avgE,
                                  evolving: evolving, evolutionScore: evScore,
                                  momentum: momentum, energyTrend: energyTrend(caps),
-                                 latestVerdict: verdict))
+                                 latestVerdict: verdict, precedent: prec))
         }
         // 지속 가치 점수(반복 중심 + 떠오름·에너지·진화 가산)
         return out.sorted { $0.sustainScore > $1.sustainScore }
@@ -133,12 +153,12 @@ enum WeeklyReview {
               let priorStart = cal.date(byAdding: .day, value: -windowDays * 3, to: today) else { return [] }
         let themes = (try? context.fetch(FetchDescriptor<Theme>())) ?? []
         let decisions = (try? context.fetch(FetchDescriptor<Decision>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
-        var latestDec: [PersistentIdentifier: Decision] = [:]
-        for d in decisions { if let t = d.theme { latestDec[t.persistentModelID] = d } }
+        var byTheme: [PersistentIdentifier: [Decision]] = [:]
+        for d in decisions { if let t = d.theme { byTheme[t.persistentModelID, default: []].append(d) } }
 
         var out: [Cooling] = []
         for t in themes {
-            if let dec = latestDec[t.persistentModelID] {
+            if let dec = byTheme[t.persistentModelID]?.last {
                 if dec.verdict == .drop { continue }                              // 접은 줄기 제외
                 if dec.verdict == .sustain && dec.createdAt >= windowStart { continue }  // 막 되살림 → 한 주기 쉼
             }
@@ -148,7 +168,9 @@ enum WeeklyReview {
             let last = t.captures.map { $0.createdAt }.max() ?? priorStart
             let daysSince = cal.dateComponents([.day], from: last, to: now).day ?? 0
             guard daysSince >= 4 else { continue }                                 // 며칠 이상 조용
-            out.append(Cooling(theme: t, priorCount: prior.count, recentCount: recent.count, daysSinceLast: daysSince))
+            let prec = Precedent.line(decisions: byTheme[t.persistentModelID] ?? [], themeCaptures: t.captures, now: now)
+            out.append(Cooling(theme: t, priorCount: prior.count, recentCount: recent.count,
+                               daysSinceLast: daysSince, precedent: prec))
         }
         return out.sorted { ($0.priorCount, $0.daysSinceLast) > ($1.priorCount, $1.daysSinceLast) }
     }
