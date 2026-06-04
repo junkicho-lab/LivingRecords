@@ -9,6 +9,7 @@ struct WeeklyReviewView: View {
     @State private var cands: [Candidate] = []
     @State private var generating = false
     @State private var weekly: Digest?
+    @State private var related: [(String, String)] = []
 
     var body: some View {
         List {
@@ -45,6 +46,18 @@ struct WeeklyReviewView: View {
                 Text("자주 돌아오고 열이 오른 주제예요. 지속/보류/접기로 정하면 다음 회고에 반영됩니다.")
             }
 
+            if !related.isEmpty {
+                Section {
+                    ForEach(related.indices, id: \.self) { i in
+                        Label("\(related[i].0)  ↔  \(related[i].1)", systemImage: "link")
+                    }
+                } header: {
+                    Text("연결된 주제 (관련 있어 보임)")
+                } footer: {
+                    Text("서로 가까운 주제예요. 한 줄기일 수도, 합칠 만할 수도 있어요. (추정 — 참고용)")
+                }
+            }
+
             Section("주간 서술") {
                 Button {
                     Task {
@@ -66,7 +79,10 @@ struct WeeklyReviewView: View {
         .onAppear { refresh() }
     }
 
-    private func refresh() { cands = WeeklyReview.candidates(context: context, now: Date()) }
+    private func refresh() {
+        cands = WeeklyReview.candidates(context: context, now: Date())
+        related = WeeklyReview.relatedPairs(cands)
+    }
 
     private func decideButton(_ title: String, _ v: Verdict, _ c: Candidate, _ color: Color) -> some View {
         Button(title) {

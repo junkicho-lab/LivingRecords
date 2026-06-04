@@ -37,7 +37,7 @@ enum WeeklyReview {
             let es = caps.compactMap { $0.energy }
             let avgE = es.isEmpty ? nil : es.reduce(0,+)/Double(es.count)
             out.append(Candidate(theme: t, days: days, count: caps.count,
-                                 avgEnergy: avgE, evolving: diversity(caps), latestVerdict: verdict))
+                                 avgEnergy: avgE, evolving: evolutionSignal(caps), latestVerdict: verdict))
         }
         // 반복도(일수) → 개수 → 에너지 순
         return out.sorted {
@@ -45,19 +45,49 @@ enum WeeklyReview {
         }
     }
 
-    // 임베딩 다양성으로 진화/맴돎 추정(저장된 임베딩 재사용). 거리 클수록 진화.
-    private static func diversity(_ caps: [Capture]) -> Bool? {
-        let vs = caps.compactMap { $0.embedding }
-        guard vs.count >= 2 else { return nil }
-        func cos(_ a: [Double], _ b: [Double]) -> Double {
-            var d = 0.0, na = 0.0, nb = 0.0
-            for i in 0..<min(a.count, b.count) { d += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i] }
-            return d / (na.squareRoot()*nb.squareRoot() + 1e-9)
+    // 시간 인식형 진화/맴돎: 시간순 전반부 vs 후반부 중심이 옮겨갔으면 진화, 비슷하면 맴돎.
+    private static func evolutionSignal(_ caps: [Capture]) -> Bool? {
+        let embs = caps.sorted { $0.createdAt < $1.createdAt }.compactMap { $0.embedding }
+        guard embs.count >= 4 else { return nil }   // 전·후반 각 2개 이상 필요
+        let mid = embs.count / 2
+        guard let early = meanVec(Array(embs[0..<mid])), let late = meanVec(Array(embs[mid...])) else { return nil }
+        let center = EmbedderImpl.shared.centeringVector()
+        return (1 - cosCentered(early, late, center)) > 0.25   // 전·후반이 충분히 다르면 진화
+    }
+
+    // 연결: 주제 중심끼리 유사도가 높은 쌍(관련 있어 보임). best-effort.
+    @MainActor
+    static func relatedPairs(_ cands: [Candidate]) -> [(String, String)] {
+        let center = EmbedderImpl.shared.centeringVector()
+        let centroids: [(name: String, vec: [Double])] = cands.compactMap { c in
+            meanVec(c.theme.captures.compactMap { $0.embedding }).map { (c.theme.name, $0) }
         }
-        var dist = 0.0, n = 0
-        for i in 0..<vs.count { for j in (i+1)..<vs.count { dist += 1 - cos(vs[i], vs[j]); n += 1 } }
-        guard n > 0 else { return nil }
-        return (dist/Double(n)) > 0.18   // 임계값(러프). 다양 → 진화
+        var scored: [(String, String, Double)] = []
+        for i in 0..<centroids.count {
+            for j in (i + 1)..<centroids.count {
+                let s = cosCentered(centroids[i].vec, centroids[j].vec, center)
+                if s > 0.15 { scored.append((centroids[i].name, centroids[j].name, s)) }
+            }
+        }
+        return scored.sorted { $0.2 > $1.2 }.prefix(5).map { ($0.0, $0.1) }
+    }
+
+    private static func meanVec(_ vs: [[Double]]) -> [Double]? {
+        guard let first = vs.first else { return nil }
+        var s = [Double](repeating: 0, count: first.count)
+        for v in vs where v.count == first.count { for i in 0..<v.count { s[i] += v[i] } }
+        for i in 0..<s.count { s[i] /= Double(vs.count) }
+        return s
+    }
+
+    private static func cosCentered(_ a: [Double], _ b: [Double], _ center: [Double]?) -> Double {
+        func cn(_ v: [Double]) -> [Double] {
+            let c = (center?.count == v.count) ? zip(v, center!).map(-) : v
+            let m = c.reduce(0) { $0 + $1 * $1 }.squareRoot() + 1e-9
+            return c.map { $0 / m }
+        }
+        let x = cn(a), y = cn(b)
+        return zip(x, y).reduce(0) { $0 + $1.0 * $1.1 }
     }
 
     @MainActor
