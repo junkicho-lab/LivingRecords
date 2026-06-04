@@ -5,15 +5,16 @@ struct ObsidianMirrorImpl: ObsidianMirror {
     let store: VaultStore
 
     func mirror(_ capture: Capture) throws {
-        guard !capture.sealed else { return }            // 봉인 제외(기기 밖으로 안 나감)
-        store.write(subdir: "Captures",
+        // 봉인 포착은 별도 폴더('봉인')로 분리. (클라우드 깊은 종합엔 여전히 제외 — Distillation에서)
+        let subdir = capture.sealed ? "봉인" : "Captures"
+        store.write(subdir: subdir,
                     filename: Self.filename(capture),
                     content: Self.markdown(capture))
     }
 
-    /// 주제 이름변경·이동·합치기 등으로 주제 링크가 바뀌었을 때 다시 쓴다(봉인 제외).
+    /// 주제 이름변경·이동·합치기 등으로 주제 링크가 바뀌었을 때 다시 쓴다.
     func remirror(_ captures: [Capture]) {
-        for c in captures where !c.sealed { try? mirror(c) }
+        for c in captures { try? mirror(c) }
     }
 
     func mirror(_ digest: Digest) throws {

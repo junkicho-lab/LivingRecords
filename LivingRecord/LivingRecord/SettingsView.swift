@@ -27,7 +27,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Obsidian 볼트")
                 } footer: {
-                    Text("포착이 이 폴더의 Captures 하위에 마크다운으로 미러됩니다. 봉인된 포착은 미러되지 않아요.")
+                    Text("포착이 이 폴더의 Captures 하위에 마크다운으로 미러됩니다. 봉인된 포착은 '봉인' 폴더에 따로 저장돼요(클라우드 종합엔 제외). 볼트가 iCloud 동기화되면 봉인도 기기를 떠나니 유의하세요.")
                 }
 
                 Section {
