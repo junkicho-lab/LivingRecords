@@ -29,6 +29,9 @@ struct DigestListView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink { WeeklyReviewView() } label: { Label("주간 회고", systemImage: "calendar") }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task {
