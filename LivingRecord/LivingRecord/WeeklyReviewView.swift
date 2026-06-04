@@ -20,14 +20,16 @@ struct WeeklyReviewView: View {
                 }
                 ForEach(cands) { c in
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack {
+                        HStack(spacing: 6) {
                             Text(c.theme.name).font(.headline)
                             Spacer()
+                            trendTag(c.trend)
                             if c.evolving == true { tag("🌱 진화", .green) }
                             else if c.evolving == false { tag("🔁 맴돎", .orange) }
                         }
                         Text("\(c.days)일 · \(c.count)회"
-                             + (c.avgEnergy.map { String(format: " · 에너지 %.0f%%", $0 * 100) } ?? ""))
+                             + (c.avgEnergy.map { String(format: " · 에너지 %.0f%%", $0 * 100) } ?? "")
+                             + energyTrendText(c.energyTrend))
                             .font(.caption).foregroundStyle(.secondary)
                         HStack(spacing: 8) {
                             decideButton("지속", .sustain, c, .green)
@@ -43,7 +45,7 @@ struct WeeklyReviewView: View {
             } header: {
                 Text("지속 후보 — 무엇을 이어갈까요?")
             } footer: {
-                Text("자주 돌아오고 열이 오른 주제예요. 지속/보류/접기로 정하면 다음 회고에 반영됩니다.")
+                Text("↑ 떠오름·↓ 식어감은 최근 흐름, 🌱 진화·🔁 맴돎은 생각이 옮겨갔는지예요. 떠오르는 주제는 지속을, 식어가는 주제는 놓아줄지 가늠해 보세요.")
             }
 
             if !related.isEmpty {
@@ -90,6 +92,23 @@ struct WeeklyReviewView: View {
             refresh()
         }
         .font(.caption).buttonStyle(.bordered).tint(color)
+    }
+
+    @ViewBuilder
+    private func trendTag(_ t: Candidate.Trend) -> some View {
+        switch t {
+        case .rising:  tag("↑ 떠오름", .blue)
+        case .cooling: tag("↓ 식어감", .gray)
+        case .steady:  EmptyView()
+        }
+    }
+
+    // 에너지 추세를 캡션에 덧붙임(↑ 오름 / ↓ 식음). 보류(nil)나 미미하면 표시 안 함.
+    private func energyTrendText(_ trend: Double?) -> String {
+        guard let t = trend else { return "" }
+        if t > 0.05 { return " · 열 ↑" }
+        if t < -0.05 { return " · 열 ↓" }
+        return ""
     }
 
     private func tag(_ text: String, _ color: Color) -> some View {
