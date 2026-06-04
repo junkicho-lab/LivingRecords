@@ -10,10 +10,12 @@ struct CaptureView: View {
     @State private var status = ""
     @State private var sealNext = false        // 봉인 모드(음성·텍스트 공통)
     @FocusState private var draftFocused: Bool
+    @State private var showSettings = false
     private let transcriber: Transcriber = SpeechTranscriberImpl()
     private let prosody: ProsodyAnalyzer = ProsodyAnalyzerImpl()
 
     var body: some View {
+        NavigationStack {
         VStack(spacing: 20) {
             // 봉인 토글
             Button { sealNext.toggle() } label: {
@@ -92,6 +94,14 @@ struct CaptureView: View {
             .padding(.horizontal)
         }
         .padding(.vertical)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showSettings = true } label: { Image(systemName: "gearshape") }
+            }
+        }
+        }
+        .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
     private func timeString(_ t: TimeInterval) -> String {

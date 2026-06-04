@@ -7,7 +7,6 @@ struct CaptureListView: View {
     @Environment(VaultStore.self) private var vault
     @Query(sort: \Capture.createdAt, order: .reverse) private var captures: [Capture]
     @Query(sort: \Theme.createdAt) private var themes: [Theme]
-    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -52,12 +51,6 @@ struct CaptureListView: View {
                 }
             }
             .navigationTitle("기록")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
-                }
-            }
-            .sheet(isPresented: $showSettings) { SettingsView() }
             .overlay {
                 if captures.isEmpty {
                     ContentUnavailableView("아직 포착이 없어요", systemImage: "mic",
