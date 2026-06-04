@@ -94,6 +94,36 @@ enum WeeklyReview {
         return late.reduce(0,+)/Double(late.count) - early.reduce(0,+)/Double(early.count)
     }
 
+    static let fadeDays = 10   // 약속 생성 후 주제 활동 0이 이만큼 지나면 '잠잠해짐'
+
+    // S8 — 이번 창의 약속(의도)들 + 생존 판정. surviving=약속 후 같은 주제에 새 포착 있음, faded=10일+활동 0.
+    @MainActor
+    static func commitments(context: ModelContext, now: Date) -> [Commitment] {
+        let cal = Calendar.current
+        guard let windowStart = cal.date(byAdding: .day, value: -windowDays, to: cal.startOfDay(for: now)) else { return [] }
+        let all = (try? context.fetch(FetchDescriptor<Commitment>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))) ?? []
+        let inWindow = all.filter { $0.createdAt >= windowStart }
+        let caps = (try? context.fetch(FetchDescriptor<Capture>())) ?? []
+        for c in inWindow {
+            c.status = survival(c, caps: caps, now: now)
+            if c.status == .surviving { c.themeName = themeName(for: c.themeID, caps: caps) ?? c.themeName }  // 이름 변경 반영
+        }
+        try? context.save()
+        return inWindow
+    }
+
+    private static func survival(_ c: Commitment, caps: [Capture], now: Date) -> CommitmentStatus {
+        guard let tid = c.themeID else { return .open }
+        if caps.contains(where: { $0.theme?.id == tid && $0.createdAt > c.createdAt }) { return .surviving }
+        let days = Calendar.current.dateComponents([.day], from: c.createdAt, to: now).day ?? 0
+        return days >= fadeDays ? .faded : .open
+    }
+
+    private static func themeName(for id: UUID?, caps: [Capture]) -> String? {
+        guard let id else { return nil }
+        return caps.first { $0.theme?.id == id }?.theme?.name
+    }
+
     // 연결: 주제 중심끼리 유사도가 높은 쌍(관련 있어 보임). best-effort.
     @MainActor
     static func relatedPairs(_ cands: [Candidate]) -> [(String, String)] {
@@ -153,6 +183,15 @@ enum WeeklyReview {
             let et = c.energyTrend.map { $0 > 0.05 ? "열기 오르는 중" : ($0 < -0.05 ? "열기 식는 중" : "") } ?? ""
             input += "- \(c.theme.name): \(c.days)일 \(c.count)회, \(tr), \(ev) \(en) \(et)\n"
         }
+        // S8 — 이번 주 다짐(의도)을 서술 입력에 보탬
+        let coms = commitments(context: context, now: now)
+        if !coms.isEmpty {
+            input += "이번 주 다짐과 그 이후:\n"
+            for c in coms.prefix(8) {
+                let st = c.status == .surviving ? "이어지는 중" : (c.status == .faded ? "잠잠해짐" : "막 시작")
+                input += "- \(c.text) (\(st))\n"
+            }
+        }
         let localFallback = "이번 주는 \(cands.prefix(3).map { $0.theme.name }.joined(separator: ", ")) 같은 주제가 자주 돌아왔어요."
         var cloud = false
         var narr: String?
@@ -177,6 +216,13 @@ enum WeeklyReview {
             let ev = c.evolving == true ? " 🌱진화" : (c.evolving == false ? " 🔁맴돎" : "")
             let tr = c.trend == .rising ? " ↑떠오름" : (c.trend == .cooling ? " ↓식어감" : "")
             md += "- \(c.theme.name) — \(c.days)일·\(c.count)회\(tr)\(ev)\n"
+        }
+        if !coms.isEmpty {
+            md += "\n**이번 주 다짐**\n"
+            for c in coms.prefix(8) {
+                let mark = c.status == .surviving ? "이어지는 중 ✓" : (c.status == .faded ? "잠잠해짐" : "막 시작")
+                md += "- \(c.text) — \(mark)\n"
+            }
         }
 
         let d = Digest(kind: .weekly, periodStart: start, periodEnd: now, narrative: md, generatedInCloud: cloud)

@@ -10,7 +10,7 @@ struct LivingRecordApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [Capture.self, Theme.self, Digest.self, Decision.self, Transmission.self])
+        .modelContainer(for: [Capture.self, Theme.self, Digest.self, Decision.self, Transmission.self, Commitment.self])
         .environment(vault)
         .environment(consent)
     }

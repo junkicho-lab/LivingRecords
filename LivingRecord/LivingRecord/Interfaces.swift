@@ -23,6 +23,10 @@ protocol ObsidianMirror {                           // 마크다운 미러 (S3, 
     func mirror(_ capture: Capture) throws
     func mirror(_ digest: Digest) throws
 }
+protocol IntentionDetector {                        // 의도 감지 (S8): 판정=결정적 어미, 라벨=FM best-effort
+    func hasIntention(_ text: String) -> Bool
+    func extractPhrase(_ text: String) async -> String
+}
 
 // --- S0 스텁 (no-op) ---
 struct StubTranscriber: Transcriber {

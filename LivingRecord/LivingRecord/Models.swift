@@ -6,6 +6,7 @@ import SwiftData
 enum ThemeState: String, Codable { case active, looping, cooling, decided }   // 활성/맴돎/냉각/결정됨
 enum DigestKind: String, Codable { case daily, weekly, period }
 enum Verdict: String, Codable { case sustain, hold, drop }                    // 지속/보류/접기
+enum CommitmentStatus: String, Codable { case open, surviving, faded }        // 약속: 진행중/살아남음/잠잠해짐 (S8)
 
 @Model
 final class Capture {
@@ -74,6 +75,28 @@ final class Transmission {
     var charCount: Int     // 전송한 증류층 글자 수
     init(kind: String, charCount: Int) {
         self.id = UUID(); self.date = .now; self.kind = kind; self.charCount = charCount
+    }
+}
+
+// S8 — 약속(의도). 포착 속 '하겠다' 의도를 결정적 게이트로 감지해 남김.
+// 주제 관계 대신 themeID 스냅샷만 둠 → 포착·주제 삭제 시 댕글링/캐스케이드 없음(생존은 themeID로 조회).
+@Model
+final class Commitment {
+    var id: UUID
+    var text: String              // 핵심 의도구(FM 추출, 실패 시 포착 텍스트 폴백)
+    var createdAt: Date
+    var statusRaw: String
+    var themeID: UUID?            // 어느 주제에 속한 다짐인가(생존 판정용)
+    var themeName: String         // 표시·미러용 스냅샷
+
+    var status: CommitmentStatus {
+        get { CommitmentStatus(rawValue: statusRaw) ?? .open }
+        set { statusRaw = newValue.rawValue }
+    }
+    init(text: String, themeID: UUID?, themeName: String, createdAt: Date = .now) {
+        self.id = UUID(); self.text = text; self.createdAt = createdAt
+        self.statusRaw = CommitmentStatus.open.rawValue
+        self.themeID = themeID; self.themeName = themeName
     }
 }
 

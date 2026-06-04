@@ -10,6 +10,7 @@ struct WeeklyReviewView: View {
     @State private var generating = false
     @State private var weekly: Digest?
     @State private var related: [(String, String)] = []
+    @State private var coms: [Commitment] = []
 
     var body: some View {
         List {
@@ -48,6 +49,25 @@ struct WeeklyReviewView: View {
                 Text("↑ 떠오름·↓ 식어감은 최근 흐름, 🌱 진화·🔁 맴돎은 생각이 옮겨갔는지예요. 떠오르는 주제는 지속을, 식어가는 주제는 놓아줄지 가늠해 보세요.")
             }
 
+            if !coms.isEmpty {
+                Section {
+                    ForEach(coms) { c in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: icon(c.status)).foregroundStyle(color(c.status))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(c.text)
+                                Text(label(c.status) + (c.themeName.isEmpty ? "" : " · \(c.themeName)"))
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("이번 주 다짐 — 무엇이 살아남았나")
+                } footer: {
+                    Text("포착 속 '하겠다'는 말을 모아 봤어요. 같은 주제가 이어지면 살아있는 다짐이에요. (자동 감지 — 참고용)")
+                }
+            }
+
             if !related.isEmpty {
                 Section {
                     ForEach(related.indices, id: \.self) { i in
@@ -84,6 +104,17 @@ struct WeeklyReviewView: View {
     private func refresh() {
         cands = WeeklyReview.candidates(context: context, now: Date())
         related = WeeklyReview.relatedPairs(cands)
+        coms = WeeklyReview.commitments(context: context, now: Date())
+    }
+
+    private func icon(_ s: CommitmentStatus) -> String {
+        switch s { case .surviving: "checkmark.circle.fill"; case .faded: "moon.zzz"; case .open: "circle.dotted" }
+    }
+    private func color(_ s: CommitmentStatus) -> Color {
+        switch s { case .surviving: .green; case .faded: .gray; case .open: .blue }
+    }
+    private func label(_ s: CommitmentStatus) -> String {
+        switch s { case .surviving: "이어지는 중"; case .faded: "잠잠해짐"; case .open: "막 시작" }
     }
 
     private func decideButton(_ title: String, _ v: Verdict, _ c: Candidate, _ color: Color) -> some View {

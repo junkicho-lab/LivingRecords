@@ -38,6 +38,16 @@ enum Consolidator {
             try? context.save()
         }
         try? ObsidianMirrorImpl(store: vault).mirror(capture)   // 주제 확정 후 미러(주제 [[링크]] 포함, 봉인 제외)
+
+        // S8 — 의도 감지(결정적 어미 게이트). 있으면 약속(Commitment) 생성. 봉인 포함(다짐도 사적일 수 있음; 클라우드엔 안 감).
+        let detector = IntentionDetectorImpl()
+        if detector.hasIntention(capture.text) {
+            let phrase = await detector.extractPhrase(capture.text)
+            let com = Commitment(text: phrase, themeID: capture.theme?.id,
+                                 themeName: capture.theme?.name ?? "", createdAt: capture.createdAt)
+            context.insert(com)
+            try? context.save()
+        }
     }
 
     static func placeholderName(_ text: String) -> String {
