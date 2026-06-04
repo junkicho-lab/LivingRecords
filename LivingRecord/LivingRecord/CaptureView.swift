@@ -11,6 +11,7 @@ struct CaptureView: View {
     @State private var sealNext = false        // 봉인 모드(음성·텍스트 공통)
     @FocusState private var draftFocused: Bool
     @State private var showSettings = false
+    @Query(sort: \Capture.createdAt, order: .reverse) private var captures: [Capture]
     private let transcriber: Transcriber = SpeechTranscriberImpl()
     private let prosody: ProsodyAnalyzer = ProsodyAnalyzerImpl()
 
@@ -93,7 +94,7 @@ struct CaptureView: View {
             }
             .padding(.horizontal)
 
-            Spacer()
+            recentCaptures
         }
         .padding(.vertical)
         .navigationBarTitleDisplayMode(.inline)
@@ -109,6 +110,29 @@ struct CaptureView: View {
     private func timeString(_ t: TimeInterval) -> String {
         let s = Int(t)
         return String(format: "%02d:%02d", s / 60, s % 60)
+    }
+
+    // 입력칸 아래: 이미 기록한 글을 최신순으로 한 줄씩.
+    @ViewBuilder
+    private var recentCaptures: some View {
+        if captures.isEmpty {
+            Spacer()
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(captures.prefix(8)) { c in
+                        Text(c.text)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 6)
+                        Divider()
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .padding(.top, 8)
+        }
     }
 
     private func toggleRecord() async {
