@@ -118,10 +118,10 @@ struct CaptureView: View {
             do {
                 let text = try await transcriber.transcribe(audioURL: url)
                 let trimmed = FillerCleaner.clean(text)   // 추임새 가벼운 정리(음성만)
-                if trimmed.isEmpty { status = "인식 결과가 없어요" }
+                if trimmed.isEmpty { flashStatus("인식 결과가 없어요") }
                 else {
                     save(trimmed, energy: energy, sealed: sealed)
-                    status = sealed ? "봉인 저장됨 🔒" : "저장됨 ✓"
+                    flashStatus(sealed ? "봉인 저장됨 🔒" : "저장됨 ✓")
                 }
             } catch {
                 status = "오류: \(error.localizedDescription)"
@@ -139,7 +139,16 @@ struct CaptureView: View {
         save(t, energy: nil, sealed: sealNext)
         draft = ""
         draftFocused = false        // 저장 후 키보드 내림
-        status = sealNext ? "봉인 저장됨 🔒" : "저장됨 ✓"
+        flashStatus(sealNext ? "봉인 저장됨 🔒" : "저장됨 ✓")
+    }
+
+    // 상태 메시지를 잠깐 보여주고 자동으로 지움(그 사이 새 메시지가 오면 유지).
+    private func flashStatus(_ msg: String) {
+        status = msg
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            if status == msg { status = "" }
+        }
     }
 
     private func save(_ text: String, energy: Double?, sealed: Bool) {
