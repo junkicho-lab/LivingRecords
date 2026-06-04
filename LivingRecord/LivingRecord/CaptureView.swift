@@ -1,49 +1,64 @@
 import SwiftUI
 import SwiftData
 
-// S1 — 포착 화면. 결정 0개: 녹음 버튼 + 텍스트 폴백 + 끝. (분류 UI 없음)
+// S1/S2 — 포착 화면. 결정 0개: 녹음+텍스트 폴백. S2: 에너지 추출 + 봉인 토글.
 struct CaptureView: View {
     @Environment(\.modelContext) private var context
     @State private var recorder = AudioRecorder()
     @State private var draft = ""
     @State private var status = ""
+    @State private var sealNext = false        // 봉인 모드(음성·텍스트 공통)
     private let transcriber: Transcriber = SpeechTranscriberImpl()
+    private let prosody: ProsodyAnalyzer = ProsodyAnalyzerImpl()
 
     var body: some View {
         VStack(spacing: 20) {
+            // 봉인 토글
+            Button { sealNext.toggle() } label: {
+                Label(sealNext ? "봉인 모드 — 이 기록은 기기 밖으로 안 나가요" : "봉인",
+                      systemImage: sealNext ? "lock.fill" : "lock.open")
+                    .font(.subheadline)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(sealNext ? Color.purple.opacity(0.15) : Color.gray.opacity(0.12),
+                                in: Capsule())
+                    .foregroundStyle(sealNext ? .purple : .secondary)
+            }
+            .padding(.top, 8)
+
             Spacer()
 
             // 녹음 버튼 + 목소리에 반응하는 펄스 링
             ZStack {
                 if recorder.isRecording {
                     Circle()
-                        .fill(Color.red.opacity(0.18))
+                        .fill((sealNext ? Color.purple : Color.red).opacity(0.18))
                         .frame(width: 120, height: 120)
                         .scaleEffect(1 + recorder.level * 0.8)
                         .animation(.easeOut(duration: 0.08), value: recorder.level)
                 }
                 Button { Task { await toggleRecord() } } label: {
-                    Image(systemName: recorder.isRecording ? "stop.fill" : "mic.fill")
+                    Image(systemName: recorder.isRecording ? "stop.fill"
+                          : (sealNext ? "lock.fill" : "mic.fill"))
                         .font(.system(size: 52))
                         .foregroundStyle(.white)
                         .frame(width: 100, height: 100)
-                        .background(recorder.isRecording ? Color.red : Color.blue, in: Circle())
+                        .background(recorder.isRecording ? (sealNext ? Color.purple : Color.red)
+                                    : (sealNext ? Color.purple : Color.blue), in: Circle())
                 }
                 .accessibilityLabel(recorder.isRecording ? "녹음 정지 및 저장" : "녹음 시작")
             }
 
-            // 진행 표시: 경과시간 + 레벨 미터  /  대기 안내
             if recorder.isRecording {
                 Label(timeString(recorder.elapsed), systemImage: "record.circle")
                     .font(.headline.monospacedDigit())
-                    .foregroundStyle(.red)
+                    .foregroundStyle(sealNext ? .purple : .red)
                     .symbolEffect(.pulse, options: .repeating)
                 Capsule()
-                    .fill(Color.red.opacity(0.2))
+                    .fill((sealNext ? Color.purple : Color.red).opacity(0.2))
                     .frame(width: 180, height: 8)
                     .overlay(alignment: .leading) {
                         Capsule()
-                            .fill(Color.red)
+                            .fill(sealNext ? Color.purple : Color.red)
                             .frame(width: 180 * recorder.level, height: 8)
                             .animation(.easeOut(duration: 0.08), value: recorder.level)
                     }
@@ -78,15 +93,21 @@ struct CaptureView: View {
     private func toggleRecord() async {
         if recorder.isRecording {
             guard let url = recorder.stop() else { return }
+            let energy = prosody.energy(audioURL: url)   // 폐기 전에 점수만 추출(절충안 C)
+            let sealed = sealNext
             status = "전사 중…"
             do {
                 let text = try await transcriber.transcribe(audioURL: url)
                 let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty { status = "인식 결과가 없어요" }
-                else { save(trimmed); status = "저장됨 ✓" }
+                else {
+                    save(trimmed, energy: energy, sealed: sealed)
+                    status = sealed ? "봉인 저장됨 🔒" : "저장됨 ✓"
+                }
             } catch {
                 status = "오류: \(error.localizedDescription)"
             }
+            try? FileManager.default.removeItem(at: url)  // 오디오 원본 폐기
         } else {
             do { try recorder.start(); status = "" }
             catch { status = "마이크 오류: \(error.localizedDescription)" }
@@ -96,13 +117,13 @@ struct CaptureView: View {
     private func saveText() {
         let t = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return }
-        save(t)
+        save(t, energy: nil, sealed: sealNext)
         draft = ""
-        status = "저장됨 ✓"
+        status = sealNext ? "봉인 저장됨 🔒" : "저장됨 ✓"
     }
 
-    private func save(_ text: String) {
-        context.insert(Capture(text: text))
+    private func save(_ text: String, energy: Double?, sealed: Bool) {
+        context.insert(Capture(text: text, energy: energy, sealed: sealed))
         try? context.save()
     }
 }
