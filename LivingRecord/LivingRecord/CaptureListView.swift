@@ -4,6 +4,7 @@ import SwiftData
 // S1/S2 — 기록 목록. 최신순 + 봉인 자물쇠 + 에너지 막대.
 struct CaptureListView: View {
     @Query(sort: \Capture.createdAt, order: .reverse) private var captures: [Capture]
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -25,6 +26,12 @@ struct CaptureListView: View {
                 .padding(.vertical, 2)
             }
             .navigationTitle("기록")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                }
+            }
+            .sheet(isPresented: $showSettings) { SettingsView() }
             .overlay {
                 if captures.isEmpty {
                     ContentUnavailableView("아직 포착이 없어요", systemImage: "mic",

@@ -4,10 +4,12 @@ import SwiftData
 // S1/S2 — 포착 화면. 결정 0개: 녹음+텍스트 폴백. S2: 에너지 추출 + 봉인 토글.
 struct CaptureView: View {
     @Environment(\.modelContext) private var context
+    @Environment(VaultStore.self) private var vault
     @State private var recorder = AudioRecorder()
     @State private var draft = ""
     @State private var status = ""
     @State private var sealNext = false        // 봉인 모드(음성·텍스트 공통)
+    @FocusState private var draftFocused: Bool
     private let transcriber: Transcriber = SpeechTranscriberImpl()
     private let prosody: ProsodyAnalyzer = ProsodyAnalyzerImpl()
 
@@ -76,6 +78,13 @@ struct CaptureView: View {
             HStack(alignment: .bottom) {
                 TextField("또는 직접 입력", text: $draft, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
+                    .focused($draftFocused)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("완료") { draftFocused = false }
+                        }
+                    }
                 Button("저장") { saveText() }
                     .buttonStyle(.borderedProminent)
                     .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -119,11 +128,14 @@ struct CaptureView: View {
         guard !t.isEmpty else { return }
         save(t, energy: nil, sealed: sealNext)
         draft = ""
+        draftFocused = false        // 저장 후 키보드 내림
         status = sealNext ? "봉인 저장됨 🔒" : "저장됨 ✓"
     }
 
     private func save(_ text: String, energy: Double?, sealed: Bool) {
-        context.insert(Capture(text: text, energy: energy, sealed: sealed))
+        let c = Capture(text: text, energy: energy, sealed: sealed)
+        context.insert(c)
         try? context.save()
+        try? ObsidianMirrorImpl(store: vault).mirror(c)   // 봉인은 내부에서 제외
     }
 }
