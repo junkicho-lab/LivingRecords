@@ -51,8 +51,9 @@ enum DailyDigest {
         let df = DateFormatter(); df.dateFormat = "M월 d일"; df.locale = Locale(identifier: "ko_KR")
         var md = "## \(df.string(from: start)) 오늘의 정리\n\n"
 
+        let style = Templates.activeDirective(context: context)   // 사용자 템플릿 스타일
         let insight = await synth(
-            instruction: "너는 사려 깊은 회고 도우미다. 아래 오늘의 생각을 '단순 나열하지 말고' 흐름과 마음의 방향을 짚어 통찰을 담아 한국어 4~6문장으로 써라. '최근 흐름'이 있으면 오늘과 연결해 무엇이 이어지고 무엇이 새로운지 언급하라. 따뜻하되 구체적으로.",
+            instruction: "너는 사려 깊은 회고 도우미다. 아래 오늘의 생각을 '단순 나열하지 말고' 흐름과 마음의 방향을 짚어 한국어로 써라. '최근 흐름'이 있으면 오늘과 연결해 무엇이 이어지고 무엇이 새로운지 언급하라. 스타일: \(style)",
             input: input)
         md += (insight ?? "오늘은 \(order.joined(separator: ", "))에 대한 생각을 남겼어요.") + "\n\n"
 

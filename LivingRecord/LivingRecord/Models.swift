@@ -101,6 +101,18 @@ final class Commitment {
     }
 }
 
+// post-v4 — 사용자 자유 작성 정리 템플릿(스타일 지시). 프리셋은 코드 상수, 이건 사용자 것만 저장.
+@Model
+final class CustomTemplate {
+    var id: UUID
+    var name: String
+    var directive: String      // 정리 글에 덧붙는 스타일/초점 지시
+    var createdAt: Date
+    init(name: String, directive: String) {
+        self.id = UUID(); self.name = name; self.directive = directive; self.createdAt = .now
+    }
+}
+
 @Model
 final class Decision {
     var id: UUID

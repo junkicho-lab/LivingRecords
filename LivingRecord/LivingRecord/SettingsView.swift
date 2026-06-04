@@ -113,6 +113,18 @@ struct SettingsView: View {
                     Text("모든 기록을 암호로 잠근 파일 하나로 내보내요(봉인 포함). 복원은 같은 암호로, 기존과 겹치지 않는 것만 더해집니다. 암호를 잊으면 복구할 수 없어요.")
                 }
 
+                Section {
+                    NavigationLink {
+                        TemplatesView()
+                    } label: {
+                        Label("정리 템플릿", systemImage: "text.alignleft")
+                    }
+                } header: {
+                    Text("정리 스타일")
+                } footer: {
+                    Text("일·주·기간 정리 글의 톤·초점을 고르거나 직접 만들어요.")
+                }
+
                 Section("개발/측정") {
                     NavigationLink {
                         STTAccuracyView()
