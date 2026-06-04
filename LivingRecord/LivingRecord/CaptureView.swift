@@ -107,7 +107,7 @@ struct CaptureView: View {
             status = "전사 중…"
             do {
                 let text = try await transcriber.transcribe(audioURL: url)
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = FillerCleaner.clean(text)   // 추임새 가벼운 정리(음성만)
                 if trimmed.isEmpty { status = "인식 결과가 없어요" }
                 else {
                     save(trimmed, energy: energy, sealed: sealed)
