@@ -32,7 +32,12 @@
 - `analyzer.analyzeSequence(from: AVAudioFile)` + `transcriber.results`로 파일 전사 성공(헤드리스 CLI에서도).
 - 결과: 단어 **100% 정확**(차이는 쉼표 1개), 문자 정확도 **97.7%** (cap.wav, TTS 합성).
 - **판정:** 신형 SpeechTranscriber로 한국어 on-device STT **확정 채택**. 레거시 SFSpeechRecognizer는 버림.
-- ⚠️ 단서: TTS 합성 음성 기준. **실제 사람 음성(잡음·발음·속도) WER은 더 높을 것** → 실사용 녹음으로 추가 측정 권장.
+- ⚠️ 단서: TTS 합성 음성 기준. 실제 사람 음성은 더 어려움 → 실기기 측정함(아래).
+
+### ②-real 실기기 실음성 측정 — ✅ SpeechTranscriber 확정
+- 앱 내 측정 도구(STTAccuracyView)로 실기기에서 6문장 자연 발화 → **평균 문자 정확도 92.8%**(공백 제외 CER 기준).
+- 오류 예: 추임새 '음'→'응'(사소, 추임새는 노이즈에 가까움). 포착은 편집 가능 + 요지 중심이라 92.8%면 충분.
+- **판정: SpeechTranscriber로 v1 확정. WhisperKit 불필요**(더 높은 정확도 필요 시에만 §3-11 대안).
 
 ## ③ Foundation Models (한국어 태깅·요약) — 🟡 작동하나 가드레일 리스크 (중요)
 

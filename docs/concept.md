@@ -112,7 +112,7 @@
 - **관통 원칙 — 경계 추상화**(feedback-app storage.ts처럼): `Transcriber`/`LocalSynthesizer`/`ProsodyAnalyzer`/`Embedder` 인터페이스로 감싸 컴포넌트별 교체 가능.
 - ⚠️ **구현 초기 스파이크 필요**: Apple API들의 **한국어 온디바이스 품질**을 직접 검증 후 1순위/대안 확정. (결과는 `docs/spike-findings.md`)
 - ✅ **임베딩 검증됨**: NLContextualEmbedding 한국어 OK, 단 **중심화(anisotropy 보정) 전처리 필수**. sentence-transformer 번들 불필요.
-- 🟡 **STT 검증**: 한국어 on-device 지원 확인(`supportsOnDeviceRecognition=true`). 정확도는 실제 앱에서 측정.
+- ✅ **STT 검증 완료**: SpeechTranscriber 한국어 on-device. **실기기 실음성 문자정확도 ~92.8%** → v1 확정, WhisperKit 불필요. (추임새 '음→응' 정도 사소 오류)
 - 🛑 **Foundation Models 가드레일 리스크**: 무해한 교사·아동 문장 일부를 거짓 차단. **로컬 LLM은 "Apple FM + MLX 오픈모델 폴백" 이중화 필수**(가드레일 회피). 차단 시 우아한 폴백 설계. (MLX 폴백 PoC ✅ — spike-findings ④)
 
 ### 3-12. 클라우드 제공자 · 저장 (확정)
