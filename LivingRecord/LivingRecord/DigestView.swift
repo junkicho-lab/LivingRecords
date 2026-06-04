@@ -30,7 +30,10 @@ struct DigestListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink { WeeklyReviewView() } label: { Label("주간 회고", systemImage: "calendar") }
+                    NavigationLink { WeeklyReviewView() } label: { Label("주간", systemImage: "calendar") }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink { PeriodReviewView() } label: { Label("기간", systemImage: "calendar.badge.clock") }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
