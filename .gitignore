@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# 스파이크 파이썬 venv (재생성 가능)
+spike/.venv/
+__pycache__/
+
+# 모델/캐시
+*.gguf
+.cache/
