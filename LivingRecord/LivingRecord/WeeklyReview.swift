@@ -70,7 +70,7 @@ enum WeeklyReview {
 
     // 주간 서술(로컬 FM) + Digest 저장
     @MainActor
-    static func buildDigest(context: ModelContext, vault: VaultStore, now: Date) async -> Digest? {
+    static func buildDigest(context: ModelContext, vault: VaultStore, consent: CloudConsent, now: Date) async -> Digest? {
         let cal = Calendar.current
         let start = cal.date(byAdding: .day, value: -windowDays, to: cal.startOfDay(for: now))!
         let cands = candidates(context: context, now: now)
@@ -82,18 +82,32 @@ enum WeeklyReview {
             let en = c.avgEnergy.map { String(format: "에너지 %.0f%%", $0*100) } ?? ""
             input += "- \(c.theme.name): \(c.days)일 \(c.count)회 \(ev) \(en)\n"
         }
-        let narr = await synth(
-            "너는 한 주를 돌아보는 회고 도우미다. 아래 '자주 돌아온 주제'들을 보고 단순 나열 말고, 이번 주 마음이 어디로 향했는지·무엇이 발전하고 무엇이 맴돌았는지 통찰을 담아 한국어 5~7문장으로. 무엇을 지속하면 좋을지 부드럽게 짚어라.",
-            input) ?? "이번 주는 \(cands.prefix(3).map { $0.theme.name }.joined(separator: ", ")) 같은 주제가 자주 돌아왔어요."
+        let localFallback = "이번 주는 \(cands.prefix(3).map { $0.theme.name }.joined(separator: ", ")) 같은 주제가 자주 돌아왔어요."
+        var cloud = false
+        var narr: String?
+        if consent.canSendToCloud, let key = consent.apiKey {
+            let distilled = await Distillation.distill(from: start, to: now, context: context)   // 증류(봉인 제외, 원문 X)
+            if let r = try? await CloudSynthesizer.synthesize(distilled: distilled, apiKey: key), !r.isEmpty {
+                narr = r; cloud = true
+                context.insert(Transmission(kind: "weekly", charCount: distilled.count))          // 전송 로그
+            }
+        }
+        if narr == nil {   // 클라우드 OFF·실패 → 로컬 종합
+            narr = await synth(
+                "너는 한 주를 돌아보는 회고 도우미다. 아래 '자주 돌아온 주제'들을 보고 단순 나열 말고, 이번 주 마음이 어디로 향했는지·무엇이 발전하고 무엇이 맴돌았는지 통찰을 담아 한국어 5~7문장으로. 무엇을 지속하면 좋을지 부드럽게 짚어라.",
+                input)
+        }
 
         let df = DateFormatter(); df.dateFormat = "M월 d일"; df.locale = Locale(identifier: "ko_KR")
-        var md = "## 주간 회고 (\(df.string(from: start)) ~ \(df.string(from: now)))\n\n\(narr)\n\n**자주 돌아온 주제**\n"
+        var md = "## 주간 회고 (\(df.string(from: start)) ~ \(df.string(from: now)))\n\n"
+        if cloud { md += "☁️ 깊은 종합(클라우드)\n\n" }
+        md += "\(narr ?? localFallback)\n\n**자주 돌아온 주제**\n"
         for c in cands.prefix(8) {
             let badge = c.evolving == true ? "🌱진화" : (c.evolving == false ? "🔁맴돎" : "")
             md += "- \(c.theme.name) — \(c.days)일·\(c.count)회 \(badge)\n"
         }
 
-        let d = Digest(kind: .weekly, periodStart: start, periodEnd: now, narrative: md, generatedInCloud: false)
+        let d = Digest(kind: .weekly, periodStart: start, periodEnd: now, narrative: md, generatedInCloud: cloud)
         context.insert(d); try? context.save()
         try? ObsidianMirrorImpl(store: vault).mirror(d)
         return d

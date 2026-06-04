@@ -5,6 +5,7 @@ import SwiftData
 struct WeeklyReviewView: View {
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
+    @Environment(CloudConsent.self) private var consent
     @State private var cands: [Candidate] = []
     @State private var generating = false
     @State private var weekly: Digest?
@@ -48,7 +49,7 @@ struct WeeklyReviewView: View {
                 Button {
                     Task {
                         generating = true
-                        weekly = await WeeklyReview.buildDigest(context: context, vault: vault, now: Date())
+                        weekly = await WeeklyReview.buildDigest(context: context, vault: vault, consent: consent, now: Date())
                         generating = false
                     }
                 } label: {

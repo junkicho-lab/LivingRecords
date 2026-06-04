@@ -65,6 +65,18 @@ final class Digest {
     }
 }
 
+// S6b — 클라우드 전송 로그(투명성). 무엇이 언제 나갔나.
+@Model
+final class Transmission {
+    var id: UUID
+    var date: Date
+    var kind: String       // 예: "weekly"
+    var charCount: Int     // 전송한 증류층 글자 수
+    init(kind: String, charCount: Int) {
+        self.id = UUID(); self.date = .now; self.kind = kind; self.charCount = charCount
+    }
+}
+
 @Model
 final class Decision {
     var id: UUID
