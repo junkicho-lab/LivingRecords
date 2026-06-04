@@ -12,6 +12,7 @@ struct CaptureView: View {
     @State private var sealNext = false        // 봉인 모드(음성·텍스트 공통)
     @FocusState private var draftFocused: Bool
     @State private var showSettings = false
+    @State private var echoes: [Capture] = []     // 포착 순간 연결: 방금 적은 것과 비슷한 옛 생각
     private let transcriber: Transcriber = SpeechTranscriberImpl()
     private let prosody: ProsodyAnalyzer = ProsodyAnalyzerImpl()
 
@@ -74,6 +75,29 @@ struct CaptureView: View {
 
             if !status.isEmpty && !recorder.isRecording {
                 Text(status).font(.caption).foregroundStyle(.secondary)
+            }
+
+            if !echoes.isEmpty && !recorder.isRecording {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("예전에 비슷한 생각", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.caption).foregroundStyle(.secondary)
+                    ForEach(echoes) { e in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("·").foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(e.text).font(.caption).lineLimit(2)
+                                Text(e.createdAt, format: .dateTime.year().month().day())
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Color.blue.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal)
+                .onTapGesture { withAnimation { echoes = [] } }
+                .transition(.opacity)
             }
 
             Spacer()
@@ -146,7 +170,7 @@ struct CaptureView: View {
             }
             try? FileManager.default.removeItem(at: url)  // 오디오 원본 폐기
         } else {
-            do { try recorder.start(); status = "" }
+            do { try recorder.start(); status = ""; echoes = [] }
             catch { status = "마이크 오류: \(error.localizedDescription)" }
         }
     }
@@ -174,5 +198,15 @@ struct CaptureView: View {
         context.insert(c)
         try? context.save()
         Consolidator.enqueue(c, context: context, vault: vault)  // 통합 후 Obsidian 미러(주제 [[링크]] 포함)
+        showEcho(for: text, excluding: c)
+    }
+
+    // 포착 순간 연결 — 방금 적은 것과 의미가 가까운 옛 포착을 조용히 띄움(의미 검색 재활용).
+    // 방금 저장한 건 아직 임베딩 전(nil)이라 자동 제외됨. 봉인은 메아리에서 빼 사적 보호.
+    private func showEcho(for text: String, excluding new: Capture) {
+        let all = (try? context.fetch(FetchDescriptor<Capture>())) ?? []
+        let pool = all.filter { $0.id != new.id && !$0.sealed }
+        let hits = SemanticSearch.similar(to: text, in: pool, limit: 2)
+        withAnimation { echoes = hits }
     }
 }

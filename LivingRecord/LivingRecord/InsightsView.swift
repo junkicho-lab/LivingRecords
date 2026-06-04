@@ -9,6 +9,7 @@ struct InsightsView: View {
     @Query(sort: \Capture.createdAt) private var captures: [Capture]
     @Query private var themes: [Theme]
 
+    @State private var memory: Resurfacer.Memory?
     private let cal = Calendar.current
     private let windowDays = 14
 
@@ -27,6 +28,7 @@ struct InsightsView: View {
                         .padding(.top, 80)
                 } else {
                     VStack(spacing: 24) {
+                        if let m = memory { resurfaced(m) }
                         summary
                         dailyCounts
                         energyTrend
@@ -36,7 +38,27 @@ struct InsightsView: View {
                 }
             }
             .navigationTitle("흐름")
+            .onAppear { memory = Resurfacer.daily(context: context) }
         }
+    }
+
+    // 되새김 — 가만히 있어도 과거가 안부를 묻는 카드.
+    private func resurfaced(_ m: Resurfacer.Memory) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(m.reason, systemImage: "sparkles").font(.caption).foregroundStyle(.orange)
+            Text(m.capture.text).font(.callout)
+            HStack(spacing: 8) {
+                if let name = m.capture.theme?.name {
+                    Text(name).font(.caption2).padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(Color.gray.opacity(0.15), in: Capsule()).foregroundStyle(.secondary)
+                }
+                Text(m.capture.createdAt, format: .dateTime.year().month().day())
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
     }
 
     // 요약 카드들
