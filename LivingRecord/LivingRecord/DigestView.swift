@@ -7,6 +7,8 @@ struct DigestListView: View {
     @Environment(VaultStore.self) private var vault
     @Query(sort: \Digest.createdAt, order: .reverse) private var digests: [Digest]
     @State private var building = false
+    @State private var showWeekly = false
+    @State private var showPeriod = false
 
     var body: some View {
         NavigationStack {
@@ -29,23 +31,32 @@ struct DigestListView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink { WeeklyReviewView() } label: { Label("주간", systemImage: "calendar") }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink { PeriodReviewView() } label: { Label("기간", systemImage: "calendar.badge.clock") }
-                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task {
-                            building = true
-                            _ = await DailyDigest.build(for: Date(), context: context, vault: vault)
-                            building = false
-                        }
+                    Menu {
+                        Button {
+                            Task {
+                                building = true
+                                _ = await DailyDigest.build(for: Date(), context: context, vault: vault)
+                                building = false
+                            }
+                        } label: { Label("일일 정리 (오늘)", systemImage: "calendar") }
+                        Button { showWeekly = true } label: { Label("주간 회고", systemImage: "calendar.badge.clock") }
+                        Button { showPeriod = true } label: { Label("기간 정리", systemImage: "calendar.badge.exclamationmark") }
                     } label: {
-                        if building { ProgressView() } else { Label("오늘 정리", systemImage: "sparkles") }
+                        if building { ProgressView() } else { Label("정리 만들기", systemImage: "plus.circle") }
                     }
-                    .disabled(building)
+                }
+            }
+            .sheet(isPresented: $showWeekly) {
+                NavigationStack {
+                    WeeklyReviewView()
+                        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("완료") { showWeekly = false } } }
+                }
+            }
+            .sheet(isPresented: $showPeriod) {
+                NavigationStack {
+                    PeriodReviewView()
+                        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("완료") { showPeriod = false } } }
                 }
             }
         }
