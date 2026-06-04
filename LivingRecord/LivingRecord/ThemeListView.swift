@@ -85,8 +85,6 @@ struct ThemeDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(VaultStore.self) private var vault
     @Query(sort: \Theme.createdAt) private var allThemes: [Theme]
-    @State private var editMode: EditMode = .inactive
-    @State private var selection = Set<PersistentIdentifier>()
     @State private var renaming = false
     @State private var newName = ""
     @State private var merging = false
@@ -97,36 +95,25 @@ struct ThemeDetailView: View {
     private var others: [Theme] { allThemes.filter { $0.id != theme.id } }
 
     var body: some View {
-        List(selection: $selection) {
+        List {
             Section {
-            ForEach(sorted, id: \.persistentModelID) { c in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(c.text)
-                    Text(c.createdAt, format: .dateTime.month().day().hour().minute())
-                        .font(.caption).foregroundStyle(.secondary)
+                ForEach(sorted, id: \.persistentModelID) { c in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(c.text)
+                        Text(c.createdAt, format: .dateTime.month().day().hour().minute())
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    .swipeActions {
+                        Button("이동") { moveTargets = [c]; moving = true }.tint(.blue)
+                    }
                 }
-                .swipeActions {
-                    Button("이동") { moveTargets = [c]; moving = true }.tint(.blue)
-                }
-            }
-            .onMove(perform: reorder)
             } header: {
-                Text("왼쪽으로 쓸어 다른 주제로 이동 · 우상단 ‘편집’으로 여러 개 선택·순서 변경")
+                Text("왼쪽으로 쓸어 다른 주제로 이동")
                     .textCase(nil)
             }
         }
-        .environment(\.editMode, $editMode)
         .navigationTitle(theme.name)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                if editMode.isEditing && !selection.isEmpty {
-                    Button("이동 (\(selection.count))") {
-                        moveTargets = sorted.filter { selection.contains($0.persistentModelID) }
-                        moving = true
-                    }
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) { EditButton() }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button { newName = theme.name; renaming = true } label: { Label("이름 변경", systemImage: "pencil") }
@@ -160,17 +147,7 @@ struct ThemeDetailView: View {
 
     private func finishMove() {
         moveTargets = []
-        selection.removeAll()
-        editMode = .inactive
         if theme.captures.isEmpty { dismiss() }
-    }
-
-    private func reorder(from: IndexSet, to: Int) {
-        var arr = sorted
-        arr.move(fromOffsets: from, toOffset: to)
-        let n = arr.count
-        for (i, c) in arr.enumerated() { c.sortIndex = Double(n - i) }   // 위가 큰 값
-        try? context.save()
     }
 
     private func mergeInto(_ target: Theme) {
