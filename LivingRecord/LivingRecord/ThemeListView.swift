@@ -60,8 +60,9 @@ struct ThemeDetailView: View {
                 }
             }
             .onMove(perform: reorder)
-            } footer: {
+            } header: {
                 Text("왼쪽으로 쓸어 다른 주제로 이동 · 우상단 ‘편집’으로 여러 개 선택·순서 변경")
+                    .textCase(nil)
             }
         }
         .environment(\.editMode, $editMode)

@@ -41,8 +41,9 @@ struct CaptureListView: View {
                         Button("이동") { moveTarget = c; moving = true }.tint(.blue)
                     }
                 }
-                } footer: {
+                } header: {
                     Text("기록을 왼쪽으로 쓸어넘기면 다른 주제로 옮길 수 있어요.")
+                        .textCase(nil)
                 }
             }
             .navigationTitle("기록")
