@@ -17,6 +17,12 @@ struct ObsidianMirrorImpl: ObsidianMirror {
         for c in captures { try? mirror(c) }
     }
 
+    /// 기록 삭제 시 미러된 .md도 제거.
+    func delete(_ capture: Capture) {
+        let subdir = capture.sealed ? "봉인" : "Captures"
+        store.deleteFile(subdir: subdir, filename: Self.filename(capture))
+    }
+
     func mirror(_ digest: Digest) throws {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")

@@ -43,4 +43,12 @@ final class VaultStore {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try? content.write(to: dir.appendingPathComponent(filename), atomically: true, encoding: .utf8)
     }
+
+    func deleteFile(subdir: String, filename: String) {
+        guard let root = vaultURL else { return }
+        let scoped = root.startAccessingSecurityScopedResource()
+        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
+        let url = root.appendingPathComponent(subdir, isDirectory: true).appendingPathComponent(filename)
+        try? FileManager.default.removeItem(at: url)
+    }
 }

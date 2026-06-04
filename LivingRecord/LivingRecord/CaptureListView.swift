@@ -43,6 +43,9 @@ struct CaptureListView: View {
                                 Label("새 주제로 추출", systemImage: "plus.circle")
                             }
                         }
+                        Button(role: .destructive) { deleteCapture(c) } label: {
+                            Label("기록 삭제", systemImage: "trash")
+                        }
                     }
                 }
                 } header: {
@@ -58,6 +61,14 @@ struct CaptureListView: View {
                 }
             }
         }
+    }
+
+    private func deleteCapture(_ c: Capture) {
+        let theme = c.theme
+        ObsidianMirrorImpl(store: vault).delete(c)          // 미러 .md 제거
+        context.delete(c)
+        if let theme, theme.captures.isEmpty { context.delete(theme) }   // 빈 주제 정리
+        try? context.save()
     }
 
     @ViewBuilder
