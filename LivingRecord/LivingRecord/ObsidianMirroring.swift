@@ -11,6 +11,11 @@ struct ObsidianMirrorImpl: ObsidianMirror {
                     content: Self.markdown(capture))
     }
 
+    /// 주제 이름변경·이동·합치기 등으로 주제 링크가 바뀌었을 때 다시 쓴다(봉인 제외).
+    func remirror(_ captures: [Capture]) {
+        for c in captures where !c.sealed { try? mirror(c) }
+    }
+
     func mirror(_ digest: Digest) throws {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
@@ -36,6 +41,9 @@ struct ObsidianMirrorImpl: ObsidianMirror {
         var fm = "---\ncreated: \(iso)\nsource: \(source)\n"
         if let e = c.energy { fm += String(format: "energy: %.2f\n", e) }
         fm += "---\n\n\(c.text)\n"
+        if let name = c.theme?.name, !name.isEmpty {     // Obsidian 그래프용 주제 위키링크
+            fm += "\n주제: [[\(name)]]\n"
+        }
         return fm
     }
 }

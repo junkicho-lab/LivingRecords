@@ -33,6 +33,7 @@ struct ThemeDetailView: View {
     let theme: Theme
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(VaultStore.self) private var vault
     @Query(sort: \Theme.createdAt) private var allThemes: [Theme]
     @State private var editMode: EditMode = .inactive
     @State private var selection = Set<PersistentIdentifier>()
@@ -84,7 +85,10 @@ struct ThemeDetailView: View {
             TextField("이름", text: $newName)
             Button("저장") {
                 let n = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !n.isEmpty { theme.name = n; try? context.save() }
+                if !n.isEmpty {
+                    theme.name = n; try? context.save()
+                    ObsidianMirrorImpl(store: vault).remirror(Array(theme.captures))   // 링크 이름 갱신
+                }
             }
             Button("취소", role: .cancel) {}
         }
@@ -93,9 +97,9 @@ struct ThemeDetailView: View {
         }
         .confirmationDialog("이 기록을 어디로 옮길까요?", isPresented: $moving, titleVisibility: .visible) {
             ForEach(others) { target in
-                Button(target.name) { Curation.move(moveTargets, to: target, context: context); finishMove() }
+                Button(target.name) { Curation.move(moveTargets, to: target, context: context, vault: vault); finishMove() }
             }
-            Button("새 주제로 추출") { Curation.extractToNew(moveTargets, context: context); finishMove() }
+            Button("새 주제로 추출") { Curation.extractToNew(moveTargets, context: context, vault: vault); finishMove() }
         }
     }
 
@@ -115,7 +119,7 @@ struct ThemeDetailView: View {
     }
 
     private func mergeInto(_ target: Theme) {
-        Curation.move(Array(theme.captures), to: target, context: context)
+        Curation.move(Array(theme.captures), to: target, context: context, vault: vault)
         dismiss()
     }
 }

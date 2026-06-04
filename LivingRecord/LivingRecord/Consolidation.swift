@@ -8,16 +8,16 @@ enum Consolidator {
     @MainActor private static var tail: Task<Void, Never>?
 
     @MainActor
-    static func enqueue(_ capture: Capture, context: ModelContext) {
+    static func enqueue(_ capture: Capture, context: ModelContext, vault: VaultStore) {
         let prev = tail
         tail = Task { @MainActor in
             _ = await prev?.value
-            await consolidate(capture, context: context)
+            await consolidate(capture, context: context, vault: vault)
         }
     }
 
     @MainActor
-    static func consolidate(_ capture: Capture, context: ModelContext) async {
+    static func consolidate(_ capture: Capture, context: ModelContext, vault: VaultStore) async {
         // 임베딩 저장(향후 활용). 배정 결정엔 사용 안 함.
         capture.embedding = EmbedderImpl.shared.embed(capture.text)
         try? context.save()
@@ -37,6 +37,7 @@ enum Consolidator {
             t.name = name
             try? context.save()
         }
+        try? ObsidianMirrorImpl(store: vault).mirror(capture)   // 주제 확정 후 미러(주제 [[링크]] 포함, 봉인 제외)
     }
 
     static func placeholderName(_ text: String) -> String {

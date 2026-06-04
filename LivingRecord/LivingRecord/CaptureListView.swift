@@ -4,6 +4,7 @@ import SwiftData
 // S1/S2/S4 — 기록 목록. 봉인·에너지·주제 표시 + 스와이프 이동(재배치).
 struct CaptureListView: View {
     @Environment(\.modelContext) private var context
+    @Environment(VaultStore.self) private var vault
     @Query(sort: \Capture.createdAt, order: .reverse) private var captures: [Capture]
     @Query(sort: \Theme.createdAt) private var themes: [Theme]
     @State private var showSettings = false
@@ -55,9 +56,9 @@ struct CaptureListView: View {
             }
             .confirmationDialog("이 기록을 어느 주제로 옮길까요?", isPresented: $moving, titleVisibility: .visible) {
                 ForEach(themes.filter { $0.id != moveTarget?.theme?.id }) { t in
-                    Button(t.name) { if let c = moveTarget { Curation.move([c], to: t, context: context) } }
+                    Button(t.name) { if let c = moveTarget { Curation.move([c], to: t, context: context, vault: vault) } }
                 }
-                Button("새 주제로 추출") { if let c = moveTarget { Curation.extractToNew([c], context: context) } }
+                Button("새 주제로 추출") { if let c = moveTarget { Curation.extractToNew([c], context: context, vault: vault) } }
             }
         }
     }
