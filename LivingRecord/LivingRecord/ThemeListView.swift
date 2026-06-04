@@ -84,8 +84,6 @@ struct ThemeDetailView: View {
     @State private var renaming = false
     @State private var newName = ""
     @State private var merging = false
-    @State private var moving = false
-    @State private var moveTargets: [Capture] = []
 
     private var sorted: [Capture] { theme.captures.sorted { $0.sortIndex > $1.sortIndex } }
     private var others: [Theme] { allThemes.filter { $0.id != theme.id } }
@@ -100,8 +98,13 @@ struct ThemeDetailView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     .contextMenu {
-                        Button { moveTargets = [c]; moving = true } label: {
-                            Label("다른 주제로 이동", systemImage: "arrow.right.circle")
+                        Section("다른 주제로 이동") {
+                            ForEach(others) { t in
+                                Button(t.name) { Curation.move([c], to: t, context: context, vault: vault); dismissIfEmpty() }
+                            }
+                            Button { Curation.extractToNew([c], context: context, vault: vault); dismissIfEmpty() } label: {
+                                Label("새 주제로 추출", systemImage: "plus.circle")
+                            }
                         }
                     }
                 }
@@ -135,16 +138,9 @@ struct ThemeDetailView: View {
         .confirmationDialog("어느 주제로 합칠까요?", isPresented: $merging, titleVisibility: .visible) {
             ForEach(others) { target in Button(target.name) { mergeInto(target) } }
         }
-        .confirmationDialog("이 기록을 어디로 옮길까요?", isPresented: $moving, titleVisibility: .visible) {
-            ForEach(others) { target in
-                Button(target.name) { Curation.move(moveTargets, to: target, context: context, vault: vault); finishMove() }
-            }
-            Button("새 주제로 추출") { Curation.extractToNew(moveTargets, context: context, vault: vault); finishMove() }
-        }
     }
 
-    private func finishMove() {
-        moveTargets = []
+    private func dismissIfEmpty() {
         if theme.captures.isEmpty { dismiss() }
     }
 

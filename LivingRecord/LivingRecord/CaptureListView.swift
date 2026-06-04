@@ -8,8 +8,6 @@ struct CaptureListView: View {
     @Query(sort: \Capture.createdAt, order: .reverse) private var captures: [Capture]
     @Query(sort: \Theme.createdAt) private var themes: [Theme]
     @State private var showSettings = false
-    @State private var moving = false
-    @State private var moveTarget: Capture?
 
     var body: some View {
         NavigationStack {
@@ -38,8 +36,13 @@ struct CaptureListView: View {
                     }
                     .padding(.vertical, 2)
                     .contextMenu {
-                        Button { moveTarget = c; moving = true } label: {
-                            Label("다른 주제로 옮기기", systemImage: "arrow.right.circle")
+                        Section("다른 주제로 옮기기") {
+                            ForEach(themes.filter { $0.id != c.theme?.id }) { t in
+                                Button(t.name) { Curation.move([c], to: t, context: context, vault: vault) }
+                            }
+                            Button { Curation.extractToNew([c], context: context, vault: vault) } label: {
+                                Label("새 주제로 추출", systemImage: "plus.circle")
+                            }
                         }
                     }
                 }
@@ -60,12 +63,6 @@ struct CaptureListView: View {
                     ContentUnavailableView("아직 포착이 없어요", systemImage: "mic",
                                            description: Text("포착 탭에서 말하거나 입력해 보세요."))
                 }
-            }
-            .confirmationDialog("이 기록을 어느 주제로 옮길까요?", isPresented: $moving, titleVisibility: .visible) {
-                ForEach(themes.filter { $0.id != moveTarget?.theme?.id }) { t in
-                    Button(t.name) { if let c = moveTarget { Curation.move([c], to: t, context: context, vault: vault) } }
-                }
-                Button("새 주제로 추출") { if let c = moveTarget { Curation.extractToNew([c], context: context, vault: vault) } }
             }
         }
     }
