@@ -16,6 +16,7 @@ struct CaptureView: View {
 
     var body: some View {
         NavigationStack {
+        GeometryReader { geo in
         VStack(spacing: 20) {
             // 봉인 토글
             Button { sealNext.toggle() } label: {
@@ -29,7 +30,7 @@ struct CaptureView: View {
             }
             .padding(.top, 8)
 
-            Spacer()
+            Spacer().frame(height: geo.size.height * 0.18)   // 위 여백 고정 → 마이크 ~1/3
 
             // 녹음 버튼 + 목소리에 반응하는 펄스 링
             ZStack {
@@ -75,7 +76,7 @@ struct CaptureView: View {
                 Text(status).font(.caption).foregroundStyle(.secondary)
             }
 
-            Spacer()
+            Spacer().frame(height: geo.size.height * 0.34)   // 마이크~입력 고정 → 입력 ~2/3
 
             HStack(alignment: .bottom) {
                 TextField("또는 직접 입력", text: $draft, axis: .vertical)
@@ -92,8 +93,12 @@ struct CaptureView: View {
                     .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding(.horizontal)
+
+            Spacer()   // 아래 flexible(키보드 회피 흡수)
         }
         .padding(.vertical)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
