@@ -8,7 +8,7 @@ struct ContentView: View {
                 .tabItem { Label("포착", systemImage: "mic.circle") }
             CaptureListView()
                 .tabItem { Label("기록", systemImage: "list.bullet") }
-            Text("주제 (S4)")
+            ThemeListView()
                 .tabItem { Label("주제", systemImage: "circle.grid.cross") }
             Text("정리 (S5/S6)")
                 .tabItem { Label("정리", systemImage: "doc.text") }

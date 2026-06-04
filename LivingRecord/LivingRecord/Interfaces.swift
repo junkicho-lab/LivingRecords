@@ -10,6 +10,7 @@ protocol ProsodyAnalyzer {                          // 에너지 점수 (S2, vDS
 }
 protocol Embedder {                                 // 임베딩 (S4, NLContextualEmbedding + 중심화)
     func embed(_ text: String) -> [Double]?
+    func centeringVector() -> [Double]?             // 고정 참조 중심 벡터(anisotropy 보정용)
 }
 protocol LocalSynthesizer {                         // 로컬 LLM (S4/S5, Foundation Models + MLX 폴백)
     func suggestTags(for text: String) async throws -> [String]
@@ -32,6 +33,7 @@ struct StubProsody: ProsodyAnalyzer {
 }
 struct StubEmbedder: Embedder {
     func embed(_ text: String) -> [Double]? { nil }
+    func centeringVector() -> [Double]? { nil }
 }
 struct StubLocalSynthesizer: LocalSynthesizer {
     func suggestTags(for text: String) async throws -> [String] { [] }
