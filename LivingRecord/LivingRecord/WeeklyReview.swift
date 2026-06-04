@@ -28,6 +28,15 @@ struct Candidate: Identifiable {
     }
 }
 
+// S9 — 냉각: 한때 뜨거웠다 조용해진 줄기. 지속 후보(최근 활발)와 분리해 '놓아줄까?'를 묻는다.
+struct Cooling: Identifiable {
+    let theme: Theme
+    let priorCount: Int        // 직전 기간(창 앞 2주) 포착 수 — 한때의 뜨거움
+    let recentCount: Int       // 최근 창 포착 수 — 식음 정도
+    let daysSinceLast: Int     // 마지막 포착 이후 경과일
+    var id: PersistentIdentifier { theme.persistentModelID }
+}
+
 enum WeeklyReview {
     static let windowDays = 7
 
@@ -92,6 +101,44 @@ enum WeeklyReview {
         let late = withE[mid...].compactMap { $0.energy }
         guard !early.isEmpty, !late.isEmpty else { return nil }
         return late.reduce(0,+)/Double(late.count) - early.reduce(0,+)/Double(early.count)
+    }
+
+    // S9 — 식어가는 줄기: 직전 2주엔 활발(≥3회)했는데 최근 창엔 거의 끊긴(≤1회) 주제.
+    // 접은 주제(drop)·막 되살린 주제(이번 창 sustain)는 제외해 다시 보채지 않음.
+    @MainActor
+    static func coolingThemes(context: ModelContext, now: Date) -> [Cooling] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: now)
+        guard let windowStart = cal.date(byAdding: .day, value: -windowDays, to: today),
+              let priorStart = cal.date(byAdding: .day, value: -windowDays * 3, to: today) else { return [] }
+        let themes = (try? context.fetch(FetchDescriptor<Theme>())) ?? []
+        let decisions = (try? context.fetch(FetchDescriptor<Decision>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+        var latestDec: [PersistentIdentifier: Decision] = [:]
+        for d in decisions { if let t = d.theme { latestDec[t.persistentModelID] = d } }
+
+        var out: [Cooling] = []
+        for t in themes {
+            if let dec = latestDec[t.persistentModelID] {
+                if dec.verdict == .drop { continue }                              // 접은 줄기 제외
+                if dec.verdict == .sustain && dec.createdAt >= windowStart { continue }  // 막 되살림 → 한 주기 쉼
+            }
+            let prior = t.captures.filter { $0.createdAt >= priorStart && $0.createdAt < windowStart }
+            let recent = t.captures.filter { $0.createdAt >= windowStart }
+            guard prior.count >= 3, recent.count <= 1 else { continue }           // 한때 뜨겁고 + 지금 거의 끊김
+            let last = t.captures.map { $0.createdAt }.max() ?? priorStart
+            let daysSince = cal.dateComponents([.day], from: last, to: now).day ?? 0
+            guard daysSince >= 4 else { continue }                                 // 며칠 이상 조용
+            out.append(Cooling(theme: t, priorCount: prior.count, recentCount: recent.count, daysSinceLast: daysSince))
+        }
+        return out.sorted { ($0.priorCount, $0.daysSinceLast) > ($1.priorCount, $1.daysSinceLast) }
+    }
+
+    // 되살리기: 다시 이어가기로. sustain 결정 기록 + 활성 복귀(한 주기 동안 냉각 목록에서 빠짐).
+    @MainActor
+    static func revive(_ theme: Theme, context: ModelContext) {
+        context.insert(Decision(theme: theme, verdict: .sustain))
+        theme.state = .active
+        try? context.save()
     }
 
     static let fadeDays = 10   // 약속 생성 후 주제 활동 0이 이만큼 지나면 '잠잠해짐'
@@ -183,6 +230,13 @@ enum WeeklyReview {
             let et = c.energyTrend.map { $0 > 0.05 ? "열기 오르는 중" : ($0 < -0.05 ? "열기 식는 중" : "") } ?? ""
             input += "- \(c.theme.name): \(c.days)일 \(c.count)회, \(tr), \(ev) \(en) \(et)\n"
         }
+        // S9 — 식어가는 줄기를 서술 입력에 보탬
+        let cooling = coolingThemes(context: context, now: now)
+        if !cooling.isEmpty {
+            input += "한때 뜨거웠다 식어가는 주제: " + cooling.prefix(5).map {
+                "\($0.theme.name)(한때 \($0.priorCount)회, \($0.daysSinceLast)일째 조용)"
+            }.joined(separator: ", ") + "\n"
+        }
         // S8 — 이번 주 다짐(의도)을 서술 입력에 보탬
         let coms = commitments(context: context, now: now)
         if !coms.isEmpty {
@@ -216,6 +270,12 @@ enum WeeklyReview {
             let ev = c.evolving == true ? " 🌱진화" : (c.evolving == false ? " 🔁맴돎" : "")
             let tr = c.trend == .rising ? " ↑떠오름" : (c.trend == .cooling ? " ↓식어감" : "")
             md += "- \(c.theme.name) — \(c.days)일·\(c.count)회\(tr)\(ev)\n"
+        }
+        if !cooling.isEmpty {
+            md += "\n**❄️ 식어가는 줄기**\n"
+            for c in cooling.prefix(6) {
+                md += "- \(c.theme.name) — 한때 \(c.priorCount)회, \(c.daysSinceLast)일째 조용\n"
+            }
         }
         if !coms.isEmpty {
             md += "\n**이번 주 다짐**\n"

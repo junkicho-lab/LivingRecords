@@ -11,6 +11,7 @@ struct WeeklyReviewView: View {
     @State private var weekly: Digest?
     @State private var related: [(String, String)] = []
     @State private var coms: [Commitment] = []
+    @State private var cooling: [Cooling] = []
 
     var body: some View {
         List {
@@ -47,6 +48,31 @@ struct WeeklyReviewView: View {
                 Text("지속 후보 — 무엇을 이어갈까요?")
             } footer: {
                 Text("↑ 떠오름·↓ 식어감은 최근 흐름, 🌱 진화·🔁 맴돎은 생각이 옮겨갔는지예요. 떠오르는 주제는 지속을, 식어가는 주제는 놓아줄지 가늠해 보세요.")
+            }
+
+            if !cooling.isEmpty {
+                Section {
+                    ForEach(cooling) { c in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("❄️ \(c.theme.name)").font(.headline)
+                            Text("한때 \(c.priorCount)회 · \(c.daysSinceLast)일째 조용")
+                                .font(.caption).foregroundStyle(.secondary)
+                            HStack(spacing: 8) {
+                                Button("되살리기") {
+                                    WeeklyReview.revive(c.theme, context: context); refresh()
+                                }.font(.caption).buttonStyle(.bordered).tint(.blue)
+                                Button("접기") {
+                                    WeeklyReview.decide(c.theme, .drop, context: context); refresh()
+                                }.font(.caption).buttonStyle(.bordered).tint(.red)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("식어가는 줄기 — 놓아줄까요?")
+                } footer: {
+                    Text("한때 자주 다뤘는데 요즘 조용해진 주제예요. 되살릴지 접을지 정하면 다음 회고가 깔끔해져요. (지속 = 이어가기 + 가지치기)")
+                }
             }
 
             if !coms.isEmpty {
@@ -105,6 +131,7 @@ struct WeeklyReviewView: View {
         cands = WeeklyReview.candidates(context: context, now: Date())
         related = WeeklyReview.relatedPairs(cands)
         coms = WeeklyReview.commitments(context: context, now: Date())
+        cooling = WeeklyReview.coolingThemes(context: context, now: Date())
     }
 
     private func icon(_ s: CommitmentStatus) -> String {
