@@ -10,6 +10,11 @@ struct SpeechTranscriberImpl: Transcriber {
                                             transcriptionOptions: [],
                                             reportingOptions: [],
                                             attributeOptions: [])
+        // 한국어 전사 에셋 '구독(예약)' 보장 — 미예약 시 "not subscribed to transcription.ko"로 전사 실패.
+        let reserved = await AssetInventory.reservedLocales
+        if !reserved.contains(where: { $0.identifier(.bcp47).hasPrefix("ko") }) {
+            _ = try? await AssetInventory.reserve(locale: locale)
+        }
         if let req = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
             try await req.downloadAndInstall()
         }

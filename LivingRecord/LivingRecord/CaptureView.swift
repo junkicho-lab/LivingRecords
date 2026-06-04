@@ -137,6 +137,6 @@ struct CaptureView: View {
         context.insert(c)
         try? context.save()
         try? ObsidianMirrorImpl(store: vault).mirror(c)   // 봉인은 내부에서 제외
-        Consolidator.consolidate(c, context: context, embedder: EmbedderImpl.shared)  // 주제 통합
+        Consolidator.enqueue(c, context: context)  // FM 의미 배정(순차 큐)
     }
 }
