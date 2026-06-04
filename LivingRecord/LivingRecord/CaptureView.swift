@@ -80,6 +80,7 @@ struct CaptureView: View {
             HStack(alignment: .bottom) {
                 TextField("또는 직접 입력", text: $draft, axis: .vertical)
                     .lineLimit(1...6)   // 줄바꿈/긴 글이면 1~6줄까지 아래로 늘어남
+                    .fixedSize(horizontal: false, vertical: true)   // 세로 압축 방지 → 본문 높이만큼 확장
                     .focused($draftFocused)
                     .padding(8)
                     .background(RoundedRectangle(cornerRadius: 8).stroke(Color(.systemGray3)))
