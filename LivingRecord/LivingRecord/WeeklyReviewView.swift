@@ -12,9 +12,28 @@ struct WeeklyReviewView: View {
     @State private var connections: [Connection] = []
     @State private var coms: [Commitment] = []
     @State private var cooling: [Cooling] = []
+    @State private var follow: [FollowUp] = []
 
     var body: some View {
         List {
+            if !follow.isEmpty {
+                Section {
+                    ForEach(follow) { f in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: followIcon(f.outcome)).foregroundStyle(followColor(f.outcome))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(f.themeName)
+                                Text(followLabel(f)).font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("지난 회고 이후 — 결정은 어떻게 됐나")
+                } footer: {
+                    Text("지난번 정한 것들의 지금이에요. 지속한 게 이어졌는지, 접은 게 다시 올라왔는지 — 결정이 다음을 비춥니다.")
+                }
+            }
+
             Section {
                 if cands.isEmpty {
                     Text("이번 주 두 번 이상 돌아온 주제가 아직 없어요.")
@@ -145,6 +164,29 @@ struct WeeklyReviewView: View {
         connections = WeeklyReview.connections(cands, now: Date())
         coms = WeeklyReview.commitments(context: context, now: Date())
         cooling = WeeklyReview.coolingThemes(context: context, now: Date())
+        follow = WeeklyReview.followUps(context: context, now: Date())
+    }
+
+    private func followIcon(_ o: FollowUp.Outcome) -> String {
+        switch o {
+        case .sustaining:  "arrow.forward.circle.fill"
+        case .slipping:    "exclamationmark.triangle"
+        case .resurfacing: "arrow.uturn.up.circle.fill"
+        case .holding:     "pause.circle"
+        }
+    }
+    private func followColor(_ o: FollowUp.Outcome) -> Color {
+        switch o {
+        case .sustaining: .green; case .slipping: .orange; case .resurfacing: .purple; case .holding: .gray
+        }
+    }
+    private func followLabel(_ f: FollowUp) -> String {
+        switch f.outcome {
+        case .sustaining:  "지속하기로 → 이번 주 \(f.recentCount)회 이어짐"
+        case .slipping:    "지속하기로 → 이번 주 조용함"
+        case .resurfacing: "접기로 했는데 → 이번 주 \(f.recentCount)회 다시 올라옴"
+        case .holding:     "보류 중 → 이번 주 \(f.recentCount)회"
+        }
     }
 
     private func icon(_ s: CommitmentStatus) -> String {

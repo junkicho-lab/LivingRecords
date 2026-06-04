@@ -47,6 +47,16 @@ struct Connection: Identifiable {
     var strong: Bool { strength > 0.30 }
 }
 
+// S11 — 피드백 고리: 지난 결정이 그 뒤 어떻게 됐나. 회고를 '돌아봄'으로 시작해 루프를 닫는다.
+struct FollowUp: Identifiable {
+    enum Outcome { case sustaining, slipping, resurfacing, holding }  // 이어짐/미끄러짐/되올라옴/보류
+    let themeName: String
+    let verdict: Verdict
+    let recentCount: Int       // 이번 창 포착 수
+    let outcome: Outcome
+    let id = UUID()
+}
+
 enum WeeklyReview {
     static let windowDays = 7
 
@@ -181,6 +191,35 @@ enum WeeklyReview {
         return caps.first { $0.theme?.id == id }?.theme?.name
     }
 
+    // S11 — 지난 결정의 현재. 한 주기(창) 이전에 내린 '최신' 결정만 보고(지켜볼 시간 필요), 이번 창 활동으로 결과 판정.
+    @MainActor
+    static func followUps(context: ModelContext, now: Date) -> [FollowUp] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: now)
+        guard let windowStart = cal.date(byAdding: .day, value: -windowDays, to: today),
+              let lookback = cal.date(byAdding: .day, value: -windowDays * 3, to: today) else { return [] }
+        let decisions = (try? context.fetch(FetchDescriptor<Decision>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+        var latest: [PersistentIdentifier: Decision] = [:]
+        for d in decisions { if let t = d.theme { latest[t.persistentModelID] = d } }   // 오름차순 → 최신이 남음
+
+        var out: [FollowUp] = []
+        for (_, d) in latest {
+            guard let t = d.theme, d.createdAt >= lookback, d.createdAt < windowStart else { continue }
+            let recent = t.captures.filter { $0.createdAt >= windowStart }.count
+            let outcome: FollowUp.Outcome
+            switch d.verdict {
+            case .sustain: outcome = recent > 0 ? .sustaining : .slipping
+            case .drop:    if recent == 0 { continue }; outcome = .resurfacing   // 조용히 정리된 건 노출 안 함
+            case .hold:    outcome = .holding
+            }
+            out.append(FollowUp(themeName: t.name, verdict: d.verdict, recentCount: recent, outcome: outcome))
+        }
+        func rank(_ o: FollowUp.Outcome) -> Int {
+            switch o { case .resurfacing: 3; case .slipping: 2; case .sustaining: 1; case .holding: 0 }
+        }
+        return out.sorted { rank($0.outcome) > rank($1.outcome) }
+    }
+
     static let linkThreshold = 0.15
 
     // 연결(고도화): 주제 중심 유사도 + 강도 + 이번 주 새 연결 여부. best-effort.
@@ -253,7 +292,23 @@ enum WeeklyReview {
         let cands = candidates(context: context, now: now)
         guard !cands.isEmpty else { return nil }
 
-        var input = "이번 주 자주 돌아온 주제들:\n"
+        // S11 — 지난 결정의 현재(돌아봄)를 서술 입력 맨 앞에
+        let follow = followUps(context: context, now: now)
+        var input = ""
+        if !follow.isEmpty {
+            input += "지난 결정의 현재:\n"
+            for f in follow.prefix(6) {
+                let s: String
+                switch f.outcome {
+                case .sustaining:  s = "지속하기로 → 이번 주 \(f.recentCount)회 이어짐"
+                case .slipping:    s = "지속하기로 → 이번 주 조용함"
+                case .resurfacing: s = "접기로 했는데 → 이번 주 \(f.recentCount)회 다시 올라옴"
+                case .holding:     s = "보류 중 → 이번 주 \(f.recentCount)회"
+                }
+                input += "- \(f.themeName): \(s)\n"
+            }
+        }
+        input += "이번 주 자주 돌아온 주제들:\n"
         for c in cands.prefix(8) {
             let ev = c.evolving == true ? "발전 중" : (c.evolving == false ? "비슷한 반복" : "")
             let tr = c.trend == .rising ? "요즘 부쩍 늘어남" : (c.trend == .cooling ? "점점 잦아들고 식어감" : "꾸준")
@@ -295,14 +350,29 @@ enum WeeklyReview {
         }
         if narr == nil {   // 클라우드 OFF·실패 → 로컬 종합
             narr = await synth(
-                "너는 한 주를 돌아보는 회고 도우미다. 아래 '자주 돌아온 주제'들을 보고 단순 나열 말고, 이번 주 마음이 어디로 향했는지·무엇이 떠오르고(부쩍 늘어남) 무엇이 식어가는지·무엇이 발전하고 무엇이 맴돌았는지 통찰을 담아 한국어 5~7문장으로. 떠오르는 주제는 지속을, 식어가는 주제는 놓아줄지 부드럽게 짚어라.",
+                "너는 한 주를 돌아보는 회고 도우미다. '지난 결정의 현재'가 있으면 먼저 그것부터 짚어라(지속하기로 한 게 이어졌는지, 접은 게 다시 올라왔는지). 그다음 '자주 돌아온 주제'를 단순 나열 말고, 이번 주 마음이 어디로 향했는지·무엇이 떠오르고 무엇이 식어가는지·무엇이 발전하고 무엇이 맴돌았는지 통찰을 담아 한국어 6~8문장으로. 떠오르는 건 지속을, 식어가는 건 놓아줄지 부드럽게 짚어라.",
                 input)
         }
 
         let df = DateFormatter(); df.dateFormat = "M월 d일"; df.locale = Locale(identifier: "ko_KR")
         var md = "## 주간 회고 (\(df.string(from: start)) ~ \(df.string(from: now)))\n\n"
         if cloud { md += "☁️ 깊은 종합(클라우드)\n\n" }
-        md += "\(narr ?? localFallback)\n\n**자주 돌아온 주제**\n"
+        md += "\(narr ?? localFallback)\n\n"
+        if !follow.isEmpty {
+            md += "**지난 회고 이후**\n"
+            for f in follow.prefix(6) {
+                let mark: String
+                switch f.outcome {
+                case .sustaining:  mark = "이어짐 ✓ (\(f.recentCount)회)"
+                case .slipping:    mark = "조용해짐"
+                case .resurfacing: mark = "다시 올라옴 ↑ (\(f.recentCount)회)"
+                case .holding:     mark = "보류 중"
+                }
+                md += "- \(f.themeName) — \(PeriodReview.verdictLabel(f.verdict))했는데 → \(mark)\n"
+            }
+            md += "\n"
+        }
+        md += "**자주 돌아온 주제**\n"
         for c in cands.prefix(8) {
             let ev = c.evolving == true ? " 🌱진화" : (c.evolving == false ? " 🔁맴돎" : "")
             let tr = c.trend == .rising ? " ↑떠오름" : (c.trend == .cooling ? " ↓식어감" : "")

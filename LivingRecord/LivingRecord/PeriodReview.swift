@@ -54,9 +54,16 @@ enum PeriodReview {
         md += "**자주 돌아온 주제**\n"
         for (name, v) in recurring.prefix(10) { md += "- \(name) — \(v.days.count)일·\(v.count)회\n" }
         if !periodDecisions.isEmpty {
-            md += "\n**내린 결정**\n"
+            md += "\n**내린 결정과 그 이후**\n"
             for d in periodDecisions.prefix(20) {
-                md += "- \(d.theme?.name ?? "?") → \(verdictLabel(d.verdict)) (\(df.string(from: d.createdAt)))\n"
+                let after = d.theme?.captures.filter { $0.createdAt > d.createdAt }.count ?? 0
+                let mark: String   // 결정 이후 그 주제가 어떻게 됐나(누적 피드백)
+                switch d.verdict {
+                case .sustain: mark = after > 0 ? " — 이어짐 ✓" : " — 조용해짐"
+                case .drop:    mark = after > 0 ? " — 다시 올라옴 ↑" : " — 정리됨"
+                case .hold:    mark = after > 0 ? " — \(after)회 더" : ""
+                }
+                md += "- \(d.theme?.name ?? "?") → \(verdictLabel(d.verdict)) (\(df.string(from: d.createdAt)))\(mark)\n"
             }
         }
 
