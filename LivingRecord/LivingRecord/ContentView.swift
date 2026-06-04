@@ -7,7 +7,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
     @Environment(\.scenePhase) private var scenePhase       // 양방향 자동 가져오기
-    private let tabCount = 4
+    private let tabCount = 5
 
     var body: some View {
         TabView(selection: $tab) {
@@ -23,6 +23,9 @@ struct ContentView: View {
             DigestListView()
                 .tabSwipe($tab, count: tabCount)
                 .tabItem { Label("정리", systemImage: "doc.text") }.tag(3)
+            InsightsView()
+                .tabSwipe($tab, count: tabCount)
+                .tabItem { Label("흐름", systemImage: "chart.bar.xaxis") }.tag(4)
         }
         .onChange(of: launch.startCapture) { _, requested in
             if requested { tab = 0 }   // 트리거되면 포착 탭으로(자동 녹음은 CaptureView가 처리)
