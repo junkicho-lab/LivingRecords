@@ -5,16 +5,12 @@ import NaturalLanguage
 // S4b — 주제 이름짓기. Foundation Models 우선, 가드레일/불가 시 NLTagger 휴리스틱 폴백.
 enum ThemeNamer {
     static func name(for text: String) async -> String {
-        if case .available = SystemLanguageModel.default.availability {
-            do {
-                let s = LanguageModelSession(instructions:
-                    "메모가 다루는 핵심 '소재·분야'를 2~5자 명사 하나로만 답하라. 행위·동작 말고 대상. 문장부호·설명 금지. 예) '수업 회고를 적었다'→'수업', '김치찌개를 먹었다'→'음식'.")
-                let r = try await s.respond(to: text)
-                let n = clean(r.content)
-                if !n.isEmpty { return n }
-            } catch {
-                // 가드레일 차단/에러 → 폴백
-            }
+        // FM→MLX 폴백 경유(LocalSynth). 둘 다 막히면 NLTagger 휴리스틱.
+        if let r = await LocalSynth.generate(
+            "메모가 다루는 핵심 '소재·분야'를 2~5자 명사 하나로만 답하라. 행위·동작 말고 대상. 문장부호·설명 금지. 예) '수업 회고를 적었다'→'수업', '김치찌개를 먹었다'→'음식'.",
+            text) {
+            let n = clean(r)
+            if !n.isEmpty { return n }
         }
         return fallback(text)
     }

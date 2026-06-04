@@ -15,13 +15,11 @@ struct IntentionDetectorImpl: IntentionDetector {
     }
 
     func extractPhrase(_ text: String) async -> String {
-        guard case .available = SystemLanguageModel.default.availability else { return fallback(text) }
-        do {
-            let s = LanguageModelSession(instructions:
-                "다음 메모에서 화자가 '하겠다'고 한 행동을 짧은 한국어 명사구로만 뽑아라. 설명·문장 말고 구절만. 예: '아침 글쓰기'.")
-            let r = try await s.respond(to: text).content.trimmingCharacters(in: .whitespacesAndNewlines)
-            return (r.isEmpty || r.count > 30) ? fallback(text) : r   // 빈값·장황하면 폴백
-        } catch { return fallback(text) }   // 가드레일/에러 → 폴백
+        // FM→MLX 폴백 경유. 빈값·장황·둘 다 막힘이면 텍스트 앞부분 폴백.
+        guard let r = await LocalSynth.generate(
+            "다음 메모에서 화자가 '하겠다'고 한 행동을 짧은 한국어 명사구로만 뽑아라. 설명·문장 말고 구절만. 예: '아침 글쓰기'.",
+            text) else { return fallback(text) }
+        return (r.isEmpty || r.count > 30) ? fallback(text) : r
     }
 
     private func fallback(_ t: String) -> String {

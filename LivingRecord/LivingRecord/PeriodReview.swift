@@ -78,11 +78,6 @@ enum PeriodReview {
     }
 
     private static func synth(_ instruction: String, _ input: String) async -> String? {
-        guard case .available = SystemLanguageModel.default.availability else { return nil }
-        do {
-            let s = LanguageModelSession(instructions: instruction)
-            let t = try await s.respond(to: input).content.trimmingCharacters(in: .whitespacesAndNewlines)
-            return t.isEmpty ? nil : t
-        } catch { return nil }
+        await LocalSynth.generate(instruction, input)   // FM→MLX 폴백
     }
 }

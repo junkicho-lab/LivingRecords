@@ -33,15 +33,9 @@ enum Distillation {
     }
 
     private static func summarize(_ texts: [String]) async -> String {
-        guard case .available = SystemLanguageModel.default.availability else {
-            return "\(texts.count)개의 생각"
-        }
-        do {
-            let s = LanguageModelSession(instructions:
-                "다음 같은 주제의 메모들을 1~2문장으로 요약하라. 구체적 흐름·변화 중심. 원문 인용 말고 추상적으로.")
-            let t = try await s.respond(to: texts.joined(separator: "\n")).content
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            return t.isEmpty ? "\(texts.count)개의 생각" : t
-        } catch { return "\(texts.count)개의 생각" }
+        let r = await LocalSynth.generate(   // FM→MLX 폴백, 둘 다 막히면 개수만
+            "다음 같은 주제의 메모들을 1~2문장으로 요약하라. 구체적 흐름·변화 중심. 원문 인용 말고 추상적으로.",
+            texts.joined(separator: "\n"))
+        return r ?? "\(texts.count)개의 생각"
     }
 }
