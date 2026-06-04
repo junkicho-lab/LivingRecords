@@ -37,6 +37,16 @@ struct Cooling: Identifiable {
     var id: PersistentIdentifier { theme.persistentModelID }
 }
 
+// S10 — 연결: 주제 중심끼리 가까운 쌍. 강도 티어 + '이번 주 새로 가까워진' 강조 + 한 줄기로 묶기.
+struct Connection: Identifiable {
+    let a: Theme
+    let b: Theme
+    let strength: Double       // cosCentered 유사도
+    let isNew: Bool            // 이번 주 처음 가까워짐(이전 중심으론 멀었음/데이터 부족)
+    var id: String { "\(a.persistentModelID.hashValue)~\(b.persistentModelID.hashValue)" }
+    var strong: Bool { strength > 0.30 }
+}
+
 enum WeeklyReview {
     static let windowDays = 7
 
@@ -171,21 +181,42 @@ enum WeeklyReview {
         return caps.first { $0.theme?.id == id }?.theme?.name
     }
 
-    // 연결: 주제 중심끼리 유사도가 높은 쌍(관련 있어 보임). best-effort.
+    static let linkThreshold = 0.15
+
+    // 연결(고도화): 주제 중심 유사도 + 강도 + 이번 주 새 연결 여부. best-effort.
     @MainActor
-    static func relatedPairs(_ cands: [Candidate]) -> [(String, String)] {
+    static func connections(_ cands: [Candidate], now: Date) -> [Connection] {
+        let cal = Calendar.current
+        let windowStart = cal.date(byAdding: .day, value: -windowDays, to: cal.startOfDay(for: now)) ?? now
         let center = EmbedderImpl.shared.centeringVector()
-        let centroids: [(name: String, vec: [Double])] = cands.compactMap { c in
-            meanVec(c.theme.captures.compactMap { $0.embedding }).map { (c.theme.name, $0) }
+        struct Node { let theme: Theme; let now: [Double]; let prior: [Double]? }
+        let nodes: [Node] = cands.compactMap { c in
+            guard let nowVec = meanVec(c.theme.captures.compactMap { $0.embedding }) else { return nil }
+            let priorVec = meanVec(c.theme.captures.filter { $0.createdAt < windowStart }.compactMap { $0.embedding })
+            return Node(theme: c.theme, now: nowVec, prior: priorVec)
         }
-        var scored: [(String, String, Double)] = []
-        for i in 0..<centroids.count {
-            for j in (i + 1)..<centroids.count {
-                let s = cosCentered(centroids[i].vec, centroids[j].vec, center)
-                if s > 0.15 { scored.append((centroids[i].name, centroids[j].name, s)) }
+        var out: [Connection] = []
+        for i in 0..<nodes.count {
+            for j in (i + 1)..<nodes.count {
+                let s = cosCentered(nodes[i].now, nodes[j].now, center)
+                guard s > linkThreshold else { continue }
+                // 이전 중심끼리도 가까웠나? 둘 다 이전 데이터 있어야 비교 가능.
+                let priorSim: Double? = (nodes[i].prior != nil && nodes[j].prior != nil)
+                    ? cosCentered(nodes[i].prior!, nodes[j].prior!, center) : nil
+                let isNew = (priorSim ?? -1) < linkThreshold   // 이전엔 멀었거나 데이터 없음 → 새 연결
+                out.append(Connection(a: nodes[i].theme, b: nodes[j].theme, strength: s, isNew: isNew))
             }
         }
-        return scored.sorted { $0.2 > $1.2 }.prefix(5).map { ($0.0, $0.1) }
+        // 새 연결 먼저, 그다음 강도
+        let sorted = out.sorted { ($0.isNew ? 1 : 0, $0.strength) > ($1.isNew ? 1 : 0, $1.strength) }
+        return Array(sorted.prefix(6))
+    }
+
+    // 한 줄기로 묶기: 작은 쪽을 큰 쪽으로 합쳐 큰 주제 이름을 보존.
+    @MainActor
+    static func mergeConnection(_ c: Connection, context: ModelContext, vault: VaultStore) {
+        let (big, small) = c.a.captures.count >= c.b.captures.count ? (c.a, c.b) : (c.b, c.a)
+        Curation.move(Array(small.captures), to: big, context: context, vault: vault)
     }
 
     private static func meanVec(_ vs: [[Double]]) -> [Double]? {
@@ -229,6 +260,12 @@ enum WeeklyReview {
             let en = c.avgEnergy.map { String(format: "에너지 %.0f%%", $0*100) } ?? ""
             let et = c.energyTrend.map { $0 > 0.05 ? "열기 오르는 중" : ($0 < -0.05 ? "열기 식는 중" : "") } ?? ""
             input += "- \(c.theme.name): \(c.days)일 \(c.count)회, \(tr), \(ev) \(en) \(et)\n"
+        }
+        // S10 — 새로 가까워진 연결을 서술 입력에 보탬(영감)
+        let conns = connections(cands, now: now)
+        let newConns = conns.filter { $0.isNew }
+        if !newConns.isEmpty {
+            input += "이번 주 새로 가까워진 주제: " + newConns.prefix(3).map { "\($0.a.name)↔\($0.b.name)" }.joined(separator: ", ") + "\n"
         }
         // S9 — 식어가는 줄기를 서술 입력에 보탬
         let cooling = coolingThemes(context: context, now: now)
@@ -275,6 +312,12 @@ enum WeeklyReview {
             md += "\n**❄️ 식어가는 줄기**\n"
             for c in cooling.prefix(6) {
                 md += "- \(c.theme.name) — 한때 \(c.priorCount)회, \(c.daysSinceLast)일째 조용\n"
+            }
+        }
+        if !conns.isEmpty {
+            md += "\n**연결**\n"
+            for c in conns.prefix(5) {
+                md += "- \(c.a.name) ↔ \(c.b.name)\(c.isNew ? " (새 연결)" : "")\n"
             }
         }
         if !coms.isEmpty {

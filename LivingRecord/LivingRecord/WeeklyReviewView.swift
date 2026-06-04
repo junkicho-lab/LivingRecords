@@ -9,7 +9,7 @@ struct WeeklyReviewView: View {
     @State private var cands: [Candidate] = []
     @State private var generating = false
     @State private var weekly: Digest?
-    @State private var related: [(String, String)] = []
+    @State private var connections: [Connection] = []
     @State private var coms: [Commitment] = []
     @State private var cooling: [Cooling] = []
 
@@ -94,15 +94,28 @@ struct WeeklyReviewView: View {
                 }
             }
 
-            if !related.isEmpty {
+            if !connections.isEmpty {
                 Section {
-                    ForEach(related.indices, id: \.self) { i in
-                        Label("\(related[i].0)  ↔  \(related[i].1)", systemImage: "link")
+                    ForEach(connections) { c in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "link").foregroundStyle(.purple)
+                                Text("\(c.a.name)  ↔  \(c.b.name)").lineLimit(1)
+                                Spacer()
+                                if c.isNew { tag("새 연결", .purple) }
+                                tag(c.strong ? "강" : "중", .gray)
+                            }
+                            Button {
+                                WeeklyReview.mergeConnection(c, context: context, vault: vault); refresh()
+                            } label: { Label("한 줄기로 묶기", systemImage: "arrow.triangle.merge") }
+                                .font(.caption).buttonStyle(.bordered)
+                        }
+                        .padding(.vertical, 2)
                     }
                 } header: {
-                    Text("연결된 주제 (관련 있어 보임)")
+                    Text("연결된 주제 — 한 줄기일까요?")
                 } footer: {
-                    Text("서로 가까운 주제예요. 한 줄기일 수도, 합칠 만할 수도 있어요. (추정 — 참고용)")
+                    Text("서로 가까운 주제예요. '새 연결'은 이번 주 처음 가까워진 것. 한 줄기면 묶어 흐름을 모을 수 있어요. (추정 — 참고용)")
                 }
             }
 
@@ -129,7 +142,7 @@ struct WeeklyReviewView: View {
 
     private func refresh() {
         cands = WeeklyReview.candidates(context: context, now: Date())
-        related = WeeklyReview.relatedPairs(cands)
+        connections = WeeklyReview.connections(cands, now: Date())
         coms = WeeklyReview.commitments(context: context, now: Date())
         cooling = WeeklyReview.coolingThemes(context: context, now: Date())
     }
