@@ -6,14 +6,75 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		62C3D7982FD19BDA00E7B488 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62C3D7972FD19BDA00E7B488 /* WidgetKit.framework */; };
+		62C3D79A2FD19BDA00E7B488 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62C3D7992FD19BDA00E7B488 /* SwiftUI.framework */; };
+		62C3D7A72FD19BDC00E7B488 /* CaptureWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 62C3D7952FD19BDA00E7B488 /* CaptureWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		62C3D7A52FD19BDC00E7B488 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 62C3D7032FD11C6E00E7B488 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 62C3D7942FD19BDA00E7B488;
+			remoteInfo = CaptureWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		62C3D7AC2FD19BDC00E7B488 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				62C3D7A72FD19BDC00E7B488 /* CaptureWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		62C3D70B2FD11C6E00E7B488 /* LivingRecord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LivingRecord.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		62C3D7952FD19BDA00E7B488 /* CaptureWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CaptureWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		62C3D7972FD19BDA00E7B488 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		62C3D7992FD19BDA00E7B488 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		62C3D7A82FD19BDC00E7B488 /* Exceptions for "CaptureWidget" folder in "CaptureWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 62C3D7942FD19BDA00E7B488 /* CaptureWidgetExtension */;
+		};
+		62C3D7AE2FD19D5B00E7B488 /* Exceptions for "LivingRecord" folder in "CaptureWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CaptureIntents.swift,
+			);
+			target = 62C3D7942FD19BDA00E7B488 /* CaptureWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		62C3D70D2FD11C6E00E7B488 /* LivingRecord */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				62C3D7AE2FD19D5B00E7B488 /* Exceptions for "LivingRecord" folder in "CaptureWidgetExtension" target */,
+			);
 			path = LivingRecord;
+			sourceTree = "<group>";
+		};
+		62C3D79B2FD19BDA00E7B488 /* CaptureWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				62C3D7A82FD19BDC00E7B488 /* Exceptions for "CaptureWidget" folder in "CaptureWidgetExtension" target */,
+			);
+			path = CaptureWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +87,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		62C3D7922FD19BDA00E7B488 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				62C3D79A2FD19BDA00E7B488 /* SwiftUI.framework in Frameworks */,
+				62C3D7982FD19BDA00E7B488 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,6 +103,8 @@
 			isa = PBXGroup;
 			children = (
 				62C3D70D2FD11C6E00E7B488 /* LivingRecord */,
+				62C3D79B2FD19BDA00E7B488 /* CaptureWidget */,
+				62C3D7962FD19BDA00E7B488 /* Frameworks */,
 				62C3D70C2FD11C6E00E7B488 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +113,18 @@
 			isa = PBXGroup;
 			children = (
 				62C3D70B2FD11C6E00E7B488 /* LivingRecord.app */,
+				62C3D7952FD19BDA00E7B488 /* CaptureWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		62C3D7962FD19BDA00E7B488 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				62C3D7972FD19BDA00E7B488 /* WidgetKit.framework */,
+				62C3D7992FD19BDA00E7B488 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +137,12 @@
 				62C3D7072FD11C6E00E7B488 /* Sources */,
 				62C3D7082FD11C6E00E7B488 /* Frameworks */,
 				62C3D7092FD11C6E00E7B488 /* Resources */,
+				62C3D7AC2FD19BDC00E7B488 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				62C3D7A62FD19BDC00E7B488 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				62C3D70D2FD11C6E00E7B488 /* LivingRecord */,
@@ -69,6 +153,28 @@
 			productName = LivingRecord;
 			productReference = 62C3D70B2FD11C6E00E7B488 /* LivingRecord.app */;
 			productType = "com.apple.product-type.application";
+		};
+		62C3D7942FD19BDA00E7B488 /* CaptureWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 62C3D7A92FD19BDC00E7B488 /* Build configuration list for PBXNativeTarget "CaptureWidgetExtension" */;
+			buildPhases = (
+				62C3D7912FD19BDA00E7B488 /* Sources */,
+				62C3D7922FD19BDA00E7B488 /* Frameworks */,
+				62C3D7932FD19BDA00E7B488 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				62C3D79B2FD19BDA00E7B488 /* CaptureWidget */,
+			);
+			name = CaptureWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = CaptureWidgetExtension;
+			productReference = 62C3D7952FD19BDA00E7B488 /* CaptureWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +187,9 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					62C3D70A2FD11C6E00E7B488 = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					62C3D7942FD19BDA00E7B488 = {
 						CreatedOnToolsVersion = 26.5;
 					};
 				};
@@ -100,12 +209,20 @@
 			projectRoot = "";
 			targets = (
 				62C3D70A2FD11C6E00E7B488 /* LivingRecord */,
+				62C3D7942FD19BDA00E7B488 /* CaptureWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		62C3D7092FD11C6E00E7B488 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		62C3D7932FD19BDA00E7B488 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +239,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		62C3D7912FD19BDA00E7B488 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		62C3D7A62FD19BDC00E7B488 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 62C3D7942FD19BDA00E7B488 /* CaptureWidgetExtension */;
+			targetProxy = 62C3D7A52FD19BDC00E7B488 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		62C3D7142FD11C7000E7B488 /* Debug */ = {
@@ -333,6 +465,71 @@
 			};
 			name = Release;
 		};
+		62C3D7AA2FD19BDC00E7B488 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CaptureWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CaptureWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = gyeol.LivingRecord.CaptureWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		62C3D7AB2FD19BDC00E7B488 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CaptureWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CaptureWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = gyeol.LivingRecord.CaptureWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -350,6 +547,15 @@
 			buildConfigurations = (
 				62C3D7172FD11C7000E7B488 /* Debug */,
 				62C3D7182FD11C7000E7B488 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		62C3D7A92FD19BDC00E7B488 /* Build configuration list for PBXNativeTarget "CaptureWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				62C3D7AA2FD19BDC00E7B488 /* Debug */,
+				62C3D7AB2FD19BDC00E7B488 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

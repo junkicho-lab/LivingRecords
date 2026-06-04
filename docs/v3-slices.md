@@ -42,4 +42,5 @@ v1+v2는 **앱을 열어야만** 포착된다. v3는 concept §3-4의 "트리거
 
 ## 진행 상황
 - **S12 ✅완료(2026-06-04)**: App Intent 포착. AppLaunchState 싱글턴 + Start(Sealed)CaptureIntent(openAppWhenRun) + LivingRecordShortcuts. ContentView 탭전환 + CaptureView 자동녹음(가드). 빌드·메타데이터 추출·기동 확인. 액션버튼/Siri 실동작은 실기기.
-- (예정) S13 리마인더 → S14 위젯(새 타깃).
+- **S13 ✅완료(2026-06-04)**: 저녁 회고 리마인더. ReminderStore(토글+시각 기본21:00, 권한, UNCalendar 일일반복) + NotificationDelegate(포그라운드 배너+탭→openCapture) + AppLaunchState.openCapture(이동전용). 설정 '리마인더' 섹션. 빌드·기동 OK. 권한·발화·탭은 실기기.
+- (예정) S14 위젯(새 타깃).
