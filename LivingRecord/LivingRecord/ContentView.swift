@@ -1,12 +1,14 @@
 import SwiftUI
+import SwiftData
 
-// S1 셸 — 4탭. 빈 영역 가로 스와이프로 옆 탭 이동(목록 행 스와이프와 충돌 안 하게 배경에만).
+// S1 셸 — 5탭. 빈 영역 가로 스와이프로 옆 탭 이동(목록 행 스와이프와 충돌 안 하게 배경에만).
 struct ContentView: View {
     @State private var tab = 0
     @Environment(AppLaunchState.self) private var launch    // S12 — 트리거 시 포착 탭으로
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
-    @Environment(\.scenePhase) private var scenePhase       // 양방향 자동 가져오기
+    @Environment(ReminderStore.self) private var reminders
+    @Environment(\.scenePhase) private var scenePhase       // 양방향 자동 가져오기 + 리마인더 갱신
     private let tabCount = 5
 
     var body: some View {
@@ -31,16 +33,22 @@ struct ContentView: View {
             if requested { tab = 0 }   // 트리거되면 포착 탭으로(자동 녹음은 CaptureView가 처리)
         }
         .onChange(of: launch.openCapture) { _, requested in
-            if requested { tab = 0; launch.openCapture = false }   // 리마인더 탭 → 이동만
+            if requested { tab = 0; launch.openCapture = false }   // 리마인더(일반) → 포착 탭
+        }
+        .onChange(of: launch.openInsights) { _, requested in
+            if requested { tab = 4; launch.openInsights = false }   // 되새김 알림 → 흐름 탭
         }
         .onAppear {
             if launch.startCapture || launch.openCapture { tab = 0 }   // 콜드 런치 대비
-            launch.openCapture = false
+            if launch.openInsights { tab = 4 }
+            launch.openCapture = false; launch.openInsights = false
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active && vault.bidirectional && vault.vaultURL != nil {
+            guard phase == .active else { return }
+            if vault.bidirectional && vault.vaultURL != nil {
                 _ = ObsidianSync.pull(context: context, vault: vault)   // 자동 양방향(토글 ON일 때만)
             }
+            reminders.reschedule(context: context)   // 되새김 알림 내용 최신화
         }
     }
 }

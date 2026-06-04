@@ -116,17 +116,18 @@ struct CloudSettingsView: View {
 // MARK: - 저녁 회고 리마인더
 struct ReminderSettingsView: View {
     @Environment(ReminderStore.self) private var reminders
+    @Environment(\.modelContext) private var context
 
     var body: some View {
         Form {
             Section {
-                Toggle("저녁 회고 알림", isOn: Binding(get: { reminders.enabled }, set: { reminders.setEnabled($0) }))
+                Toggle("저녁 회고 알림", isOn: Binding(get: { reminders.enabled }, set: { reminders.setEnabled($0, context: context) }))
                 if reminders.enabled {
-                    DatePicker("시각", selection: Binding(get: { reminders.timeAsDate }, set: { reminders.setTime($0) }),
+                    DatePicker("시각", selection: Binding(get: { reminders.timeAsDate }, set: { reminders.setTime($0, context: context) }),
                                displayedComponents: .hourAndMinute)
                 }
             } footer: {
-                Text("매일 정한 시각에 '오늘을 한 줄로' 알림을 보내요. 탭하면 포착 화면으로 열립니다. 알림은 기기 안에서만 동작해요.")
+                Text("매일 정한 시각에 그날의 '되새김'(과거가 안부)을 알림으로 보내요. 탭하면 흐름 탭에서 그 기록을 봐요. 되새길 게 없으면 '오늘을 한 줄로' 포착 권유로. 알림은 기기 안에서만 동작해요.")
             }
         }
         .navigationTitle("저녁 회고 알림")
