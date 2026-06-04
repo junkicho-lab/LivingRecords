@@ -14,6 +14,7 @@ struct CaptureListView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
                 ForEach(captures) { c in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(alignment: .top, spacing: 6) {
@@ -39,6 +40,9 @@ struct CaptureListView: View {
                     .swipeActions {
                         Button("이동") { moveTarget = c; moving = true }.tint(.blue)
                     }
+                }
+                } footer: {
+                    Text("기록을 왼쪽으로 쓸어넘기면 다른 주제로 옮길 수 있어요.")
                 }
             }
             .navigationTitle("기록")

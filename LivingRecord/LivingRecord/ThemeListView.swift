@@ -48,6 +48,7 @@ struct ThemeDetailView: View {
 
     var body: some View {
         List(selection: $selection) {
+            Section {
             ForEach(sorted, id: \.persistentModelID) { c in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(c.text)
@@ -59,6 +60,9 @@ struct ThemeDetailView: View {
                 }
             }
             .onMove(perform: reorder)
+            } footer: {
+                Text("왼쪽으로 쓸어 다른 주제로 이동 · 우상단 ‘편집’으로 여러 개 선택·순서 변경")
+            }
         }
         .environment(\.editMode, $editMode)
         .navigationTitle(theme.name)
