@@ -62,6 +62,14 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                Section("개발/측정") {
+                    NavigationLink {
+                        STTAccuracyView()
+                    } label: {
+                        Label("받아쓰기 정확도 측정", systemImage: "waveform.badge.magnifyingglass")
+                    }
+                }
             }
             .navigationTitle("설정")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("완료") { dismiss() } } }
