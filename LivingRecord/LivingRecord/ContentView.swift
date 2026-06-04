@@ -24,8 +24,12 @@ struct ContentView: View {
         .onChange(of: launch.startCapture) { _, requested in
             if requested { tab = 0 }   // 트리거되면 포착 탭으로(자동 녹음은 CaptureView가 처리)
         }
+        .onChange(of: launch.openCapture) { _, requested in
+            if requested { tab = 0; launch.openCapture = false }   // 리마인더 탭 → 이동만
+        }
         .onAppear {
-            if launch.startCapture { tab = 0 }   // 콜드 런치 대비
+            if launch.startCapture || launch.openCapture { tab = 0 }   // 콜드 런치 대비
+            launch.openCapture = false
         }
     }
 }

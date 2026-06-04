@@ -41,4 +41,5 @@ v1+v2는 **앱을 열어야만** 포착된다. v3는 concept §3-4의 "트리거
 - **S12(App Intent)** 부터. 새 타깃 없이 액션버튼·Siri·AirPods가 한 번에 열린다.
 
 ## 진행 상황
-- (예정) S12 → S13 → S14.
+- **S12 ✅완료(2026-06-04)**: App Intent 포착. AppLaunchState 싱글턴 + Start(Sealed)CaptureIntent(openAppWhenRun) + LivingRecordShortcuts. ContentView 탭전환 + CaptureView 자동녹음(가드). 빌드·메타데이터 추출·기동 확인. 액션버튼/Siri 실동작은 실기기.
+- (예정) S13 리마인더 → S14 위젯(새 타깃).

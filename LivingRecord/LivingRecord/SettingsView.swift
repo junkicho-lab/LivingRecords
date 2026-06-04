@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(VaultStore.self) private var vault
     @Environment(CloudConsent.self) private var cloud
+    @Environment(ReminderStore.self) private var reminders
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Transmission.date, order: .reverse) private var transmissions: [Transmission]
     @State private var picking = false
@@ -61,6 +62,18 @@ struct SettingsView: View {
                             }.font(.caption)
                         }
                     }
+                }
+
+                Section {
+                    Toggle("저녁 회고 알림", isOn: Binding(get: { reminders.enabled }, set: { reminders.setEnabled($0) }))
+                    if reminders.enabled {
+                        DatePicker("시각", selection: Binding(get: { reminders.timeAsDate }, set: { reminders.setTime($0) }),
+                                   displayedComponents: .hourAndMinute)
+                    }
+                } header: {
+                    Text("리마인더")
+                } footer: {
+                    Text("매일 정한 시각에 '오늘을 한 줄로' 알림을 보내요. 탭하면 포착 화면으로 열립니다. 알림은 기기 안에서만 동작해요.")
                 }
 
                 Section("개발/측정") {

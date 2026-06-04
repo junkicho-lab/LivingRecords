@@ -9,8 +9,9 @@ import Observation
 @Observable
 final class AppLaunchState {
     static let shared = AppLaunchState()
-    var startCapture = false      // 포착 시작 요청
+    var startCapture = false      // 포착 시작 요청(트리거 → 자동 녹음)
     var startSealed = false       // 봉인 포착 여부
+    var openCapture = false       // 포착 탭으로 이동만(리마인더 탭 → 녹음 안 함) — S13
     private init() {}
 }
 
