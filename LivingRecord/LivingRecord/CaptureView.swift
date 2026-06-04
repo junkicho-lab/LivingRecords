@@ -79,9 +79,10 @@ struct CaptureView: View {
 
             HStack(alignment: .bottom) {
                 TextField("또는 직접 입력", text: $draft, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...6)   // 내용 길어지면 1~6줄까지 입력칸이 늘어남
+                    .lineLimit(1...6)   // 줄바꿈/긴 글이면 1~6줄까지 아래로 늘어남
                     .focused($draftFocused)
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 8).stroke(Color(.systemGray3)))
                     .toolbar {
                         ToolbarItemGroup(placement: .keyboard) {
                             Spacer()
