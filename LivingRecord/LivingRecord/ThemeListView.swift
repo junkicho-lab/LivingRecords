@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// S4 — 주제 탭. 통합된 주제별로 포착 보기 + 큐레이션(이름변경/합치기/이동).
+// S4 — 주제 탭. 통합된 주제별 포착 + 큐레이션(이름변경/합치기) + 기록 재배치(이동/다중이동/순서).
 struct ThemeListView: View {
     @Query(sort: \Theme.createdAt, order: .reverse) private var themes: [Theme]
 
@@ -14,8 +14,7 @@ struct ThemeListView: View {
                     HStack {
                         Text(t.name).lineLimit(1)
                         Spacer()
-                        Text("\(t.captures.count)")
-                            .font(.caption).foregroundStyle(.secondary)
+                        Text("\(t.captures.count)").font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -35,35 +34,51 @@ struct ThemeDetailView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Theme.createdAt) private var allThemes: [Theme]
+    @State private var editMode: EditMode = .inactive
+    @State private var selection = Set<PersistentIdentifier>()
     @State private var renaming = false
     @State private var newName = ""
     @State private var merging = false
     @State private var moving = false
-    @State private var moveTarget: Capture?
+    @State private var moveTargets: [Capture] = []
 
-    private var otherThemes: [Theme] { allThemes.filter { $0.id != theme.id } }
+    private var sorted: [Capture] { theme.captures.sorted { $0.sortIndex > $1.sortIndex } }
+    private var others: [Theme] { allThemes.filter { $0.id != theme.id } }
 
     var body: some View {
-        List {
-            ForEach(theme.captures.sorted { $0.createdAt > $1.createdAt }) { c in
+        List(selection: $selection) {
+            ForEach(sorted, id: \.persistentModelID) { c in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(c.text)
                     Text(c.createdAt, format: .dateTime.month().day().hour().minute())
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .swipeActions {
-                    Button("이동") { moveTarget = c; moving = true }.tint(.blue)
+                    Button("이동") { moveTargets = [c]; moving = true }.tint(.blue)
                 }
             }
+            .onMove(perform: reorder)
         }
+        .environment(\.editMode, $editMode)
         .navigationTitle(theme.name)
         .toolbar {
-            Menu {
-                Button { newName = theme.name; renaming = true } label: { Label("이름 변경", systemImage: "pencil") }
-                if !otherThemes.isEmpty {
-                    Button { merging = true } label: { Label("다른 주제로 합치기", systemImage: "arrow.triangle.merge") }
+            ToolbarItem(placement: .topBarLeading) {
+                if editMode.isEditing && !selection.isEmpty {
+                    Button("이동 (\(selection.count))") {
+                        moveTargets = sorted.filter { selection.contains($0.persistentModelID) }
+                        moving = true
+                    }
                 }
-            } label: { Image(systemName: "ellipsis.circle") }
+            }
+            ToolbarItem(placement: .topBarTrailing) { EditButton() }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button { newName = theme.name; renaming = true } label: { Label("이름 변경", systemImage: "pencil") }
+                    if !others.isEmpty {
+                        Button { merging = true } label: { Label("다른 주제로 합치기", systemImage: "arrow.triangle.merge") }
+                    }
+                } label: { Image(systemName: "ellipsis.circle") }
+            }
         }
         .alert("주제 이름 변경", isPresented: $renaming) {
             TextField("이름", text: $newName)
@@ -74,36 +89,33 @@ struct ThemeDetailView: View {
             Button("취소", role: .cancel) {}
         }
         .confirmationDialog("어느 주제로 합칠까요?", isPresented: $merging, titleVisibility: .visible) {
-            ForEach(otherThemes) { target in
-                Button(target.name) { merge(into: target) }
-            }
+            ForEach(others) { target in Button(target.name) { mergeInto(target) } }
         }
-        .confirmationDialog("이 포착을 어디로 옮길까요?", isPresented: $moving, titleVisibility: .visible) {
-            ForEach(otherThemes) { target in
-                Button(target.name) { if let c = moveTarget { move(c, to: target) } }
+        .confirmationDialog("이 기록을 어디로 옮길까요?", isPresented: $moving, titleVisibility: .visible) {
+            ForEach(others) { target in
+                Button(target.name) { Curation.move(moveTargets, to: target, context: context); finishMove() }
             }
-            Button("새 주제로 추출") { if let c = moveTarget { extractToNew(c) } }
+            Button("새 주제로 추출") { Curation.extractToNew(moveTargets, context: context); finishMove() }
         }
     }
 
-    private func merge(into target: Theme) {
-        for c in Array(theme.captures) { c.theme = target }
-        context.delete(theme)
+    private func finishMove() {
+        moveTargets = []
+        selection.removeAll()
+        editMode = .inactive
+        if theme.captures.isEmpty { dismiss() }
+    }
+
+    private func reorder(from: IndexSet, to: Int) {
+        var arr = sorted
+        arr.move(fromOffsets: from, toOffset: to)
+        let n = arr.count
+        for (i, c) in arr.enumerated() { c.sortIndex = Double(n - i) }   // 위가 큰 값
         try? context.save()
+    }
+
+    private func mergeInto(_ target: Theme) {
+        Curation.move(Array(theme.captures), to: target, context: context)
         dismiss()
-    }
-
-    private func move(_ c: Capture, to target: Theme) {
-        c.theme = target
-        try? context.save()
-        if theme.captures.isEmpty { context.delete(theme); try? context.save(); dismiss() }
-    }
-
-    private func extractToNew(_ c: Capture) {
-        let t = Theme(name: Consolidator.placeholderName(c.text))
-        context.insert(t)
-        c.theme = t
-        try? context.save()
-        if theme.captures.isEmpty { context.delete(theme); try? context.save(); dismiss() }
     }
 }

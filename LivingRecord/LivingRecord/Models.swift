@@ -17,11 +17,13 @@ final class Capture {
     var tagCandidates: [String]    // emergent 주제 후보 (S4)
     var embedding: [Double]?       // 512d 임베딩 (S4)
     var theme: Theme?              // 통합된 주제 (S4)
+    var sortIndex: Double = 0      // 주제 내 수동 정렬값 (기본=생성시각). 클수록 위.
 
     init(text: String, createdAt: Date = .now, energy: Double? = nil, sealed: Bool = false) {
         self.id = UUID(); self.text = text; self.createdAt = createdAt
         self.energy = energy; self.sealed = sealed
         self.tagCandidates = []; self.embedding = nil; self.theme = nil
+        self.sortIndex = createdAt.timeIntervalSince1970
     }
 }
 

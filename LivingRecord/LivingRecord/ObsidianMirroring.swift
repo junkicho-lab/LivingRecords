@@ -12,7 +12,15 @@ struct ObsidianMirrorImpl: ObsidianMirror {
     }
 
     func mirror(_ digest: Digest) throws {
-        // S5/S6에서 일일/주간 정리 미러 구현
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.dateFormat = "yyyy-MM-dd"
+        let kind: String
+        switch digest.kind { case .daily: kind = "일일"; case .weekly: kind = "주간"; case .period: kind = "기간" }
+        let fm = "---\ntype: digest\nkind: \(digest.kindRaw)\ndate: \(ISO8601DateFormatter().string(from: digest.periodStart))\n---\n\n"
+        store.write(subdir: "Digests",
+                    filename: "\(kind)정리 \(df.string(from: digest.periodStart)).md",
+                    content: fm + digest.narrative + "\n")
     }
 
     static func filename(_ c: Capture) -> String {

@@ -10,7 +10,7 @@ struct ContentView: View {
                 .tabItem { Label("기록", systemImage: "list.bullet") }
             ThemeListView()
                 .tabItem { Label("주제", systemImage: "circle.grid.cross") }
-            Text("정리 (S5/S6)")
+            DigestListView()
                 .tabItem { Label("정리", systemImage: "doc.text") }
         }
     }
