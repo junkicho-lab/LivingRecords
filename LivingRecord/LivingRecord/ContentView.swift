@@ -27,7 +27,9 @@ extension View {
     /// 빈 영역(배경) 가로 스와이프로 인접 탭 전환. 좌→다음, 우→이전.
     func tabSwipe(_ selection: Binding<Int>, count: Int) -> some View {
         // 전체 영역 가로 스와이프(세로 스크롤과 구분: 가로가 1.5배 이상 + 70pt↑). 행은 길게누르기로 동작.
-        simultaneousGesture(
+        // contentShape: VStack 등 빈 공간(Spacer)도 터치 받게 — 포착 탭 스와이프 위해 필요.
+        contentShape(Rectangle())
+        .simultaneousGesture(
             DragGesture(minimumDistance: 30)
                 .onEnded { v in
                     guard abs(v.translation.width) > abs(v.translation.height) * 1.5,
