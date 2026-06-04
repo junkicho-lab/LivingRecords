@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var exportDoc: BackupDocument?
     @State private var pendingImportURL: URL?
     @State private var backupMessage: String?
+    @State private var syncMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -35,10 +36,20 @@ struct SettingsView: View {
                     Button(vault.vaultURL == nil ? "볼트 폴더 선택" : "볼트 폴더 변경") {
                         picking = true
                     }
+                    if vault.vaultURL != nil {
+                        Button { syncMessage = "다시 내보내는 중…"; let n = ObsidianSync.reexportAll(context: context, vault: vault); syncMessage = "\(n)개 다시 내보냈어요." } label: {
+                            Label("전체 다시 내보내기", systemImage: "square.and.arrow.up.on.square")
+                        }
+                        Button { syncMessage = ObsidianSync.pull(context: context, vault: vault).message } label: {
+                            Label("Obsidian에서 가져오기", systemImage: "arrow.down.doc")
+                        }
+                        Toggle("앱 켤 때 자동 가져오기", isOn: Binding(get: { vault.bidirectional }, set: { vault.bidirectional = $0 }))
+                        if let m = syncMessage { Text(m).font(.caption).foregroundStyle(.secondary) }
+                    }
                 } header: {
                     Text("Obsidian 볼트")
                 } footer: {
-                    Text("포착이 이 폴더의 Captures 하위에 마크다운으로 미러됩니다. 봉인된 포착은 '봉인' 폴더에 따로 저장돼요(클라우드 종합엔 제외). 볼트가 iCloud 동기화되면 봉인도 기기를 떠나니 유의하세요.")
+                    Text("포착이 Captures 하위에 마크다운으로 미러됩니다(봉인은 '봉인' 폴더). 양방향: Obsidian에서 편집·추가·삭제한 내용을 '가져오기'로 앱에 반영해요(가져올 땐 Obsidian 우선, 삭제는 미러된 기록만). 새 볼트를 연결하면 '전체 다시 내보내기'를 먼저 하세요.")
                 }
 
                 Section {

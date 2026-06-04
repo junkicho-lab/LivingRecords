@@ -10,6 +10,7 @@ struct ObsidianMirrorImpl: ObsidianMirror {
         store.write(subdir: subdir,
                     filename: Self.filename(capture),
                     content: Self.markdown(capture))
+        capture.mirrored = true   // 양방향 동기화 삭제 안전장치(미러된 것만 삭제 대상)
     }
 
     /// 주제 이름변경·이동·합치기 등으로 주제 링크가 바뀌었을 때 다시 쓴다.
@@ -45,12 +46,37 @@ struct ObsidianMirrorImpl: ObsidianMirror {
     static func markdown(_ c: Capture) -> String {
         let iso = ISO8601DateFormatter().string(from: c.createdAt)
         let source = c.energy == nil ? "text" : "voice"
-        var fm = "---\ncreated: \(iso)\nsource: \(source)\n"
+        var fm = "---\nid: \(c.id.uuidString)\ncreated: \(iso)\nsource: \(source)\n"   // id = 양방향 매핑 키
         if let e = c.energy { fm += String(format: "energy: %.2f\n", e) }
         fm += "---\n\n\(c.text)\n"
         if let name = c.theme?.name, !name.isEmpty {     // Obsidian 그래프용 주제 위키링크
             fm += "\n주제: [[\(name)]]\n"
         }
         return fm
+    }
+
+    // 양방향 — 미러된 .md를 다시 읽어 (id, 본문, 주제) 추출. 사용자가 Obsidian에서 편집한 결과 반영용.
+    struct ParsedNote { let id: UUID?; let text: String; let theme: String? }
+    static func parse(_ content: String) -> ParsedNote {
+        var lines = content.components(separatedBy: "\n")
+        var id: UUID?
+        if lines.first?.trimmingCharacters(in: .whitespaces) == "---" {
+            var i = 1
+            while i < lines.count, lines[i].trimmingCharacters(in: .whitespaces) != "---" {
+                let kv = lines[i].split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                if kv.count == 2, kv[0] == "id" { id = UUID(uuidString: kv[1]) }
+                i += 1
+            }
+            if i < lines.count { lines.removeSubrange(0...i) }   // frontmatter 제거(닫는 --- 포함)
+        }
+        var theme: String?
+        lines.removeAll { line in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            guard t.hasPrefix("주제:"), let lo = t.range(of: "[["), let hi = t.range(of: "]]") else { return false }
+            theme = String(t[lo.upperBound..<hi.lowerBound]).trimmingCharacters(in: .whitespaces)
+            return true
+        }
+        let text = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return ParsedNote(id: id, text: text, theme: theme)
     }
 }

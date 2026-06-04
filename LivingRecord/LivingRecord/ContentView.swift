@@ -4,6 +4,9 @@ import SwiftUI
 struct ContentView: View {
     @State private var tab = 0
     @Environment(AppLaunchState.self) private var launch    // S12 — 트리거 시 포착 탭으로
+    @Environment(\.modelContext) private var context
+    @Environment(VaultStore.self) private var vault
+    @Environment(\.scenePhase) private var scenePhase       // 양방향 자동 가져오기
     private let tabCount = 4
 
     var body: some View {
@@ -30,6 +33,11 @@ struct ContentView: View {
         .onAppear {
             if launch.startCapture || launch.openCapture { tab = 0 }   // 콜드 런치 대비
             launch.openCapture = false
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active && vault.bidirectional && vault.vaultURL != nil {
+                _ = ObsidianSync.pull(context: context, vault: vault)   // 자동 양방향(토글 ON일 때만)
+            }
         }
     }
 }
