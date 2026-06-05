@@ -1,0 +1,6 @@
+# 빌드 산출물(원본에서 재생성 가능)
+*.html
+*.docx
+*.pdf
+교재-통합본-학생판.md
+textbook-combined-student.md
