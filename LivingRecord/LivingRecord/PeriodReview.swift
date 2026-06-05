@@ -11,7 +11,8 @@ enum PeriodReview {
             ?? Date(timeIntervalSince1970: 0)
 
         let all = (try? context.fetch(FetchDescriptor<Capture>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
-        let caps = all.filter { $0.createdAt >= start && $0.createdAt < now }
+        // 봉인 제외: 이 caps에서 input(주제명·횟수)이 만들어져 클라우드로도 가므로 반드시 거른다.
+        let caps = all.filter { !$0.sealed && $0.createdAt >= start && $0.createdAt < now }
         guard !caps.isEmpty else { return nil }
 
         // 주제별 반복

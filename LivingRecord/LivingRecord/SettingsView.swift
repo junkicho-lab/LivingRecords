@@ -30,7 +30,7 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Obsidian 볼트 (저장·단방향 미러·양방향 가져오기)
+// MARK: - Obsidian 볼트 (단방향 미러 + LLM 위키 빌드)
 struct ObsidianSettingsView: View {
     @Environment(VaultStore.self) private var vault
     @Environment(CloudConsent.self) private var cloud

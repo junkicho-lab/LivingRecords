@@ -1,6 +1,7 @@
 import Foundation
 
-// S0 — 컴포넌트 경계 추상화(concept.md §3-11 "관통 원칙"). 슬라이스 진행하며 실제 구현으로 교체.
+// S0 — 컴포넌트 경계 추상화(concept.md §3-11 "관통 원칙"). 실제 구현(*Impl)이 conform.
+// (로컬 LLM 텍스트 생성은 LocalSynth, 클라우드는 CloudSynthesizer로 직접 구현 — 별도 프로토콜 불필요)
 
 protocol Transcriber {                              // STT (S1, SpeechTranscriber)
     func transcribe(audioURL: URL) async throws -> String
@@ -12,13 +13,6 @@ protocol Embedder {                                 // 임베딩 (S4, NLContextu
     func embed(_ text: String) -> [Double]?
     func centeringVector() -> [Double]?             // 고정 참조 중심 벡터(anisotropy 보정용)
 }
-protocol LocalSynthesizer {                         // 로컬 LLM (S4/S5, Foundation Models + MLX 폴백)
-    func suggestTags(for text: String) async throws -> [String]
-    func summarize(_ texts: [String], instruction: String) async throws -> String
-}
-protocol DeepSynthesizer {                          // 클라우드 깊은 종합 (S6, Claude)
-    func synthesize(distilled: String, instruction: String) async throws -> String
-}
 protocol ObsidianMirror {                           // 마크다운 미러 (S3, 단방향, 봉인 제외)
     func mirror(_ capture: Capture) throws
     func mirror(_ digest: Digest) throws
@@ -26,27 +20,4 @@ protocol ObsidianMirror {                           // 마크다운 미러 (S3, 
 protocol IntentionDetector {                        // 의도 감지 (S8): 판정=결정적 어미, 라벨=FM best-effort
     func hasIntention(_ text: String) -> Bool
     func extractPhrase(_ text: String) async -> String
-}
-
-// --- S0 스텁 (no-op) ---
-struct StubTranscriber: Transcriber {
-    func transcribe(audioURL: URL) async throws -> String { "" }
-}
-struct StubProsody: ProsodyAnalyzer {
-    func energy(audioURL: URL) -> Double? { nil }
-}
-struct StubEmbedder: Embedder {
-    func embed(_ text: String) -> [Double]? { nil }
-    func centeringVector() -> [Double]? { nil }
-}
-struct StubLocalSynthesizer: LocalSynthesizer {
-    func suggestTags(for text: String) async throws -> [String] { [] }
-    func summarize(_ texts: [String], instruction: String) async throws -> String { "" }
-}
-struct StubDeepSynthesizer: DeepSynthesizer {
-    func synthesize(distilled: String, instruction: String) async throws -> String { "" }
-}
-struct StubObsidianMirror: ObsidianMirror {
-    func mirror(_ capture: Capture) throws {}
-    func mirror(_ digest: Digest) throws {}
 }

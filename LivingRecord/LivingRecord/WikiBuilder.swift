@@ -50,7 +50,7 @@ enum WikiBuilder {
         if let s = theme.summary, !s.isEmpty {     // 클라우드 AI 종합(슬라이스 B)
             md += "\n## 한눈에\n\(s)\n"
         }
-        if let p = Precedent.line(decisions: decisions, themeCaptures: theme.captures, now: now) {
+        if let p = Precedent.line(decisions: decisions, themeCaptures: caps, now: now) {   // 봉인 제외 카운트
             md += "\n## 결정\n- \(p)\n"
         }
         md += "\n## 기록 (\(caps.count))\n"
