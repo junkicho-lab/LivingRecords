@@ -50,6 +50,9 @@ enum WikiBuilder {
         }
         md += "updated: \(ISO8601DateFormatter().string(from: now))\n---\n\n"
         md += "# \(theme.name)\n"
+        if let s = theme.summary, !s.isEmpty {     // 클라우드 AI 종합(슬라이스 B)
+            md += "\n## 한눈에\n\(s)\n"
+        }
         if let p = Precedent.line(decisions: decisions, themeCaptures: theme.captures, now: now) {
             md += "\n## 결정\n- \(p)\n"
         }

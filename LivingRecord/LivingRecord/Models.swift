@@ -36,6 +36,7 @@ final class Theme {
     var stateRaw: String
     var pinned: Bool
     var createdAt: Date
+    var summary: String?           // 위키 허브 '한눈에' (클라우드 종합, 슬라이스 B)
     @Relationship(deleteRule: .nullify, inverse: \Capture.theme) var captures: [Capture]
 
     var state: ThemeState {

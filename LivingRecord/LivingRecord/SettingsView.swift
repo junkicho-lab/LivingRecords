@@ -33,9 +33,11 @@ struct SettingsView: View {
 // MARK: - Obsidian 볼트 (저장·단방향 미러·양방향 가져오기)
 struct ObsidianSettingsView: View {
     @Environment(VaultStore.self) private var vault
+    @Environment(CloudConsent.self) private var cloud
     @Environment(\.modelContext) private var context
     @State private var picking = false
     @State private var wikiMessage: String?
+    @State private var summarizing = false
 
     var body: some View {
         Form {
@@ -55,11 +57,24 @@ struct ObsidianSettingsView: View {
                         let n = WikiBuilder.rebuildAll(context: context, vault: vault)
                         wikiMessage = "주제 허브 \(n)개 + 색인을 다시 만들었어요."
                     } label: { Label("위키 다시 빌드 (전체)", systemImage: "square.stack.3d.up") }
+                    Button {
+                        summarizing = true
+                        Task {
+                            wikiMessage = await WikiSummary.refresh(context: context, vault: vault, consent: cloud)
+                            summarizing = false
+                        }
+                    } label: {
+                        HStack {
+                            Label("AI 종합 갱신 (클라우드)", systemImage: "sparkles")
+                            if summarizing { Spacer(); ProgressView() }
+                        }
+                    }
+                    .disabled(summarizing || !cloud.canSendToCloud)
                     if let m = wikiMessage { Text(m).font(.caption).foregroundStyle(.secondary) }
                 } header: {
                     Text("LLM 위키")
                 } footer: {
-                    Text("주제마다 허브 노트(Themes/)와 색인(index.md)을 만들어, 볼트를 LLM이 길찾아 읽을 수 있는 위키로 구성해요. 새 포착·큐레이션 때 자동 갱신되며, 기존 데이터엔 이 버튼으로 한 번 입혀요. 봉인은 제외됩니다.")
+                    Text("주제마다 허브 노트(Themes/)와 색인(index.md)을 만들어, 볼트를 LLM이 길찾아 읽을 수 있는 위키로 구성해요. 새 포착·큐레이션 때 자동 갱신되며, 기존 데이터엔 '다시 빌드'로 한 번 입혀요. 'AI 종합'은 각 허브의 '한눈에'를 클라우드(Claude)로 채워요(증류층만 전송·봉인 제외, 클라우드 켠 경우만). 봉인은 늘 제외됩니다.")
                 }
             }
         }
