@@ -11,6 +11,7 @@ Korean originals live in `../` (the `docs/` folder).
 | Instructor Answer Key | [`instructor-answer-key.md`](instructor-answer-key.md) | `../강사용-모범답안집.md` | instructor only |
 | Grading Rubric | [`grading-rubric.md`](grading-rubric.md) | `../채점-루브릭.md` | instructor |
 | Student Workbook | [`student-workbook.md`](student-workbook.md) | `../학생-워크북.md` | student |
+| Quiz / Exam Question Bank | [`question-bank.md`](question-bank.md) | `../문제은행.md` | instructor (answers appendix) |
 
 ## Primary source material (Korean, not translated)
 - `../concept.md` — design decisions & open questions
