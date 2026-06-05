@@ -257,7 +257,7 @@ ______________________________________________
 5. In the final review, fixed a leak where ______ digesting was sending sealed theme names to the cloud.
 
 ### 🔍 Code exploration (diff comparison)
-- Compare `git show 184c6a9 --stat` with `git show 59f559c --stat`.
+- Compare `git show b0d28e6 --stat` with `git show f9fe264 --stat`.
 - The file that was added on introduction and disappeared on withdrawal: `____________`
 
 ### 🛠 Final (Submit)

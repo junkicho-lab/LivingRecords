@@ -180,7 +180,7 @@ Goal line: **user** · 1. **security-scoped** · 2. **centering (중심화)** ·
 💡 *Why:* This week's message = *knowing how to roll back is also skill*. Failure isn't shameful — it's the most valuable teaching material.
 
 ### Code exploration model answers
-- The file that was added in `git show 184c6a9 --stat` (introducing bidirectional) and disappeared in `59f559c` (the retraction): **`ObsidianSync.swift`** (pull/reexportAll). Plus frontmatter `id:` added→removed, and `VaultStore`'s listMarkdown/subdirExists/bidirectional added→removed.
+- The file that was added in `git show b0d28e6 --stat` (introducing bidirectional) and disappeared in `f9fe264` (the retraction): **`ObsidianSync.swift`** (pull/reexportAll). Plus frontmatter `id:` added→removed, and `VaultStore`'s listMarkdown/subdirExists/bidirectional added→removed.
 
 ### Privacy audit — model table
 | Path | Sealed excluded? | Where |
@@ -230,4 +230,4 @@ Goal line: **user** · 1. **security-scoped** · 2. **centering (중심화)** ·
 - [ ] Secure at least one real device (for voice/widget/notification demos).
 - [ ] Open each week's *commit hash to read* in advance and prepare the diff (specified in this document and the plan).
 - [ ] Run the two spikes (`intention_spike2`, `embed_spike3`) ahead of time and check the output.
-- [ ] Be ready to put Week 8's bidirectional diff (`184c6a9` ↔ `59f559c`) on screen.
+- [ ] Be ready to put Week 8's bidirectional diff (`b0d28e6` ↔ `f9fe264`) on screen.

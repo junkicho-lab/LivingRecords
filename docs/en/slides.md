@@ -49,7 +49,7 @@ header: "Living Record — iOS App Design, 8 Weeks"
 ## Code/Doc Walk (Week 1)
 - `docs/concept.md` — decided vs. open
 - `spike-findings.md` ①②③⑥ — Korean on-device verification results
-- Open commit `a89972f` (S0 scaffolding)
+- Open commit `04ad787` (S0 scaffolding)
 
 <!-- Demo: run `swift spike/intention_spike2.swift` in the terminal -->
 
@@ -86,7 +86,7 @@ header: "Living Record — iOS App Design, 8 Weeks"
 - `Models.swift:Capture` — read the fields
 - `CaptureView.swift:saveText()` → insert · save · enqueue
 - `CaptureListView` — `@Query` auto-refresh
-- Commits `12f89de` · `930cc73`
+- Commits `f6af896` · `c12f7db`
 
 ---
 
@@ -121,7 +121,7 @@ header: "Living Record — iOS App Design, 8 Weeks"
 - `ObsidianMirroring:markdown` — frontmatter
 - `Embedding` · `ThemeAssigning(SameTopic)` · `Consolidation` · `Curation`
 - Reproduce spikes `binary_spike` / `embed_spike3`
-- Commits `e66c50f` · `0baf42d` · `24194a3`
+- Commits `508fa6c` · `e0d5ba6` · `b951fdc`
 
 ---
 
@@ -161,8 +161,8 @@ header: "Living Record — iOS App Design, 8 Weeks"
 
 ## Code Walk (Week 4)
 - `DailyDigest` · `WeeklyReview` · `Distillation` · `DeepSynthesizer` · `CloudConsent`
-- Compare UX struggle: `38bccef`→`087793c` (4 commits to auto-expand the input field)
-- Commits `cf7c950` · `4ade900` · `26816eb`
+- Compare UX struggle: `ca7e901`→`db3e13f` (4 commits to auto-expand the input field)
+- Commits `bbbcdc5` · `8176371` · `3df87d6`
 
 ---
 
@@ -200,7 +200,7 @@ Spike ⑦:
 - `IntentionDetecting:markers` (겠/해야/하자/봐야지… — commitment endings)
 - `WeeklyReview` (candidates · cooling · followUps · Precedent)
 - Spike `intention_spike2` (A/B/C comparison)
-- Commits `6b1940d` · `3b41933` · `aa1964e`
+- Commits `321f36a` · `c4a77ca` · `58134ba`
 
 ---
 
@@ -234,7 +234,7 @@ Spike ⑦:
 ## Code Walk · Demo (Week 6)
 - `CaptureIntents` · `CaptureWidget*` · `Reminders` · `Search` · `Backup`
 - Demo: capture via Action Button/Siri (real device), `backup_spike` (wrong password fails)
-- Commits `f853e64` · `1f9a63c` · `0490d8e` · `aed31ab`
+- Commits `feeb00f` · `6230017` · `b791ce8` · `eebc466`
 
 **Milestone 4:** 2 of trigger / search / backup
 
@@ -262,7 +262,7 @@ Spike ⑦:
 ## Code Walk (Week 7)
 - `Resurfacer` · `Throughline` · `WikiBuilder` · `WikiSummary`
 - Demo: Obsidian graph view (hubs + captures)
-- Commits `93d3ed3` · `c065fb5` · `7b4de04` · `395757a`
+- Commits `aabe3b7` · `2a0ffce` · `4e1c9e2` · `0204f06`
 
 **Milestone 5:** one of resurfacing or the wiki
 
@@ -287,7 +287,7 @@ Spike ⑦:
 ---
 
 ## Two-Way Obsidian — Adopted, Then Reverted (key)
-- Adopted `184c6a9` → **duplicate-creation incident** → reverted `59f559c`
+- Adopted `b0d28e6` → **duplicate-creation incident** → reverted `f9fe264`
 - Root cause: existing files had **no `id:`**, so all were treated as "new captures" → wholesale duplication
 - Lesson: deletion and automation must be **explicit · guarded · dry-run**
 
@@ -302,8 +302,8 @@ Spike ⑦:
 ---
 
 ## Code Walk · Finals (Week 8)
-- diff: `git show 184c6a9` ↔ `59f559c` (the vanished file: `ObsidianSync.swift`)
-- Final sweep: fix sealed-content cloud leak (`232fa5a`)
+- diff: `git show b0d28e6` ↔ `f9fe264` (the vanished file: `ObsidianSync.swift`)
+- Final sweep: fix sealed-content cloud leak (`6b0df7f`)
 
 **Finals:** privacy audit (10%) + project presentation (30%)
 

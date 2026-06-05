@@ -63,7 +63,7 @@
 
 **Lecture flow**
 1. *Theory (1h):* The app vision ("what to sustain") · the 7 methodology principles · why docs matter as much as code.
-2. *Code reading (1h):* Tour the repository structure — `docs/` first, then the source map. Open one commit (`a89972f`).
+2. *Code reading (1h):* Tour the repository structure — `docs/` first, then the source map. Open one commit (`04ad787`).
 3. *Hands-on (1h):* Xcode and device setup. Run `spike/embed_spike3.swift` or `intention_spike2.swift` with `swift` and reproduce the output.
 
 **Hands-on / assignment**
@@ -85,7 +85,7 @@
 
 **Lecture flow**
 1. *Theory:* SwiftData basics (models, contexts, queries, migrations) · SwiftUI state (`@State`/`@Environment`).
-2. *Code reading:* `Models.swift` → `CaptureView.swift` → `CaptureListView.swift`. Commits `12f89de` · `930cc73`.
+2. *Code reading:* `Models.swift` → `CaptureView.swift` → `CaptureListView.swift`. Commits `f6af896` · `c12f7db`.
 3. *Live coding:* Text capture → store → list from scratch (recording may be narrowed to a later step).
 
 **Hands-on / assignment (Milestone 1)**
@@ -107,7 +107,7 @@
 
 **Lecture flow**
 1. *Theory:* security-scoped bookmark (access outside the sandbox) · embeddings and cosine similarity · **centering** · FM guide generation (`@Generable`).
-2. *Code reading:* `VaultStore` · `ObsidianMirroring` → `Embedding` · `ThemeAssigning` · `Consolidation` · `Curation`. Commits `e66c50f` · `0baf42d` · `24194a3`.
+2. *Code reading:* `VaultStore` · `ObsidianMirroring` → `Embedding` · `ThemeAssigning` · `Consolidation` · `Curation`. Commits `508fa6c` · `e0d5ba6` · `b951fdc`.
 3. *Hands-on:* Run the spikes `embed_spike3` · `binary_spike` to reproduce *why threshold clustering failed and we moved to FM assignment*.
 
 **Hands-on / assignment (Milestone 2 + spike report submission)**
@@ -129,7 +129,7 @@
 
 **Lecture flow**
 1. *Theory:* The altitude ladder of reflection (day → week → period) · privacy boundaries · cloud = upgrade (not a dependency).
-2. *Code reading:* `DailyDigest` · `WeeklyReview` · `Distillation` · `DeepSynthesizer` · `CloudConsent`. Commits `cf7c950` · `4ade900` · `26816eb`. Compare the UX-struggle commits (`38bccef` → `087793c`).
+2. *Code reading:* `DailyDigest` · `WeeklyReview` · `Distillation` · `DeepSynthesizer` · `CloudConsent`. Commits `bbbcdc5` · `8176371` · `3df87d6`. Compare the UX-struggle commits (`ca7e901` → `db3e13f`).
 3. *Hands-on:* Generate a daily digest + (optional) read the cloud toggle flow. Voice capture on a real device + a CER measurement tool.
 
 **Hands-on / assignment (Midpoint check: complete v1)**
@@ -151,7 +151,7 @@
 
 **Lecture flow**
 1. *Theory:* Momentum (early vs. late in the window) · evolving/looping · cooling (pruning) · "make the deterministic things deterministic".
-2. *Code reading:* `WeeklyReview` (candidates · cooling · followUps · Precedent) · `IntentionDetecting` · `Resurfacer is Week 7`. Commits `0927954` · `6b1940d` · `3b41933` · `aa1964e`.
+2. *Code reading:* `WeeklyReview` (candidates · cooling · followUps · Precedent) · `IntentionDetecting` · `Resurfacer is Week 7`. Commits `f111058` · `321f36a` · `c4a77ca` · `58134ba`.
 3. *Hands-on:* Reproduce the A (FM) · B (gate) · C comparison with `intention_spike2` → why the gate wins.
 
 **Hands-on / assignment (Milestone 3 + essay submission)**
@@ -173,7 +173,7 @@
 
 **Lecture flow**
 1. *Theory:* App Intents / `openAppWhenRun` / AppShortcut · WidgetKit interactive widgets · UNCalendar notifications · CryptoKit (HKDF + AES-GCM) · Swift Charts.
-2. *Code reading:* `CaptureIntents` · `Reminders` · `CaptureWidget*` · `Search` · `Backup` · `Templates` · `InsightsView`. Commits `f853e64` · `89b3a41` · `1f9a63c` · `0490d8e` · `aed31ab`.
+2. *Code reading:* `CaptureIntents` · `Reminders` · `CaptureWidget*` · `Search` · `Backup` · `Templates` · `InsightsView`. Commits `feeb00f` · `2eb2465` · `6230017` · `b791ce8` · `eebc466`.
 3. *Hands-on:* Trigger a capture via the Action button / Siri (physical device) **or** implement search **or** a backup round-trip (`backup_spike`).
 
 **Hands-on / assignment (Milestone 4)**
@@ -194,7 +194,7 @@
 
 **Lecture flow**
 1. *Theory:* "How the past helps the present" (resurfacing · precedent · throughline) · avoiding the rumination trap · wiki hub + MOC · opt-in summary.
-2. *Code reading:* `Resurfacer` · `Throughline` · `Reminders` (resurfacing push) · `WeeklyReview` (Precedent) · `WikiBuilder` · `WikiSummary`. Commits `93d3ed3` · `76ef6d7` · `c065fb5` · `7b4de04` · `395757a` · `5daed48`.
+2. *Code reading:* `Resurfacer` · `Throughline` · `Reminders` (resurfacing push) · `WeeklyReview` (Precedent) · `WikiBuilder` · `WikiSummary`. Commits `aabe3b7` · `dbd806f` · `2a0ffce` · `4e1c9e2` · `0204f06` · `1472fa4`.
 3. *Hands-on:* Implement resurfacing (Resurfacer) **or** generate a wiki hub (`WikiBuilder`) — check the graph view in the vault.
 
 **Hands-on / assignment (Milestone 5)**
@@ -215,7 +215,7 @@
 
 **Lecture flow**
 1. *Theory:* The *root cause* and safeguards of the two-way duplicate-creation incident · the embedding limit (3 times) · final code review (sealed cloud leak).
-2. *Code reading (diff comparison):* `184c6a9` (introducing two-way) ↔ `59f559c` (reversal) · `c8c36db`/`ab886ee` (related-theme tuning → removal) · `232fa5a` (review · leak fix).
+2. *Code reading (diff comparison):* `b0d28e6` (introducing two-way) ↔ `f9fe264` (reversal) · `4ee6710`/`f0b5001` (related-theme tuning → removal) · `6b0df7f` (review · leak fix).
 3. *Presentation:* Final project presentations.
 
 **Hands-on / assignment (Final)**

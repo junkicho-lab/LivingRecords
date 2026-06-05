@@ -144,7 +144,7 @@
 
 **W8-SA1 ★★ [B]** *How many times* did this project repeatedly confirm that embedding-based theme linking cannot be trusted? (Bonus for naming the three points.)
 
-**W8-CODE1 ★★ [E]** What *key file* was added in `git show 184c6a9` (bidirectional introduction) and removed in `59f559c` (rollback)?
+**W8-CODE1 ★★ [E]** What *key file* was added in `git show b0d28e6` (bidirectional introduction) and removed in `f9fe264` (rollback)?
 
 **W8-ES1 ★★★ [D]** (Essay) Name three or more "paths by which a sealed item could leave the device," and for each state whether the seal is excluded and where.
 
