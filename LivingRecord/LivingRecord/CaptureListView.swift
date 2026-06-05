@@ -52,6 +52,7 @@ struct CaptureListView: View {
                 }
             }
             .navigationTitle("기록")
+            .navigationBarTitleDisplayMode(.inline)   // 큰 제목과 칩 바 겹침 방지
             .safeAreaInset(edge: .top) {
                 if trimmed.isEmpty { DateFilterBar(range: $range) }   // 검색 중엔 칩 숨김(검색은 전체에서)
             }
