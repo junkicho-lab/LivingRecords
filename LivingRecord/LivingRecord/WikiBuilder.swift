@@ -33,8 +33,6 @@ enum WikiBuilder {
             deleteTheme(named: theme.name, vault: vault); return
         }
         let sorted = caps.sorted { $0.createdAt > $1.createdAt }
-        let allThemes = (try? context.fetch(FetchDescriptor<Theme>())) ?? []
-        let rel = related(to: theme, among: allThemes)
         let decisions = ((try? context.fetch(FetchDescriptor<Decision>())) ?? [])
             .filter { $0.theme?.persistentModelID == theme.persistentModelID }
 
@@ -44,7 +42,6 @@ enum WikiBuilder {
         md += "count: \(caps.count)\n"
         md += "first: \(dayFmt.string(from: first))\n"
         md += "last: \(dayFmt.string(from: last))\n"
-        if !rel.isEmpty { md += "related: [\(rel.map { "\"\(yamlEscape($0))\"" }.joined(separator: ", "))]\n" }
         if let v = decisions.sorted(by: { $0.createdAt < $1.createdAt }).last?.verdict {
             md += "decision: \(PeriodReview.verdictLabel(v))\n"
         }
@@ -55,9 +52,6 @@ enum WikiBuilder {
         }
         if let p = Precedent.line(decisions: decisions, themeCaptures: theme.captures, now: now) {
             md += "\n## 결정\n- \(p)\n"
-        }
-        if !rel.isEmpty {
-            md += "\n## 관련 주제\n" + rel.map { "- [[\(safeName($0))]]" }.joined(separator: "\n") + "\n"
         }
         md += "\n## 기록 (\(caps.count))\n"
         for c in sorted.prefix(300) {
@@ -106,37 +100,5 @@ enum WikiBuilder {
         updateIndex(context: context, vault: vault)
         return themes.count
     }
-
-    // --- 관련 주제(중심 유사도, best-effort) ---
-    // 임베딩 순위가 거칠어(spike ⑥) 임계값을 보수적으로: 강한 근접만, 엉뚱한 묶임 방지(없으면 생략).
-    static let relatedThreshold = 0.30
-    @MainActor
-    private static func related(to theme: Theme, among themes: [Theme], limit: Int = 3) -> [String] {
-        guard let base = centroid(theme) else { return [] }
-        let center = EmbedderImpl.shared.centeringVector()
-        var scored: [(String, Double)] = []
-        for t in themes where t.persistentModelID != theme.persistentModelID {
-            guard let v = centroid(t) else { continue }
-            let s = cosCentered(base, v, center)
-            if s > relatedThreshold { scored.append((t.name, s)) }
-        }
-        return scored.sorted { $0.1 > $1.1 }.prefix(limit).map { $0.0 }
-    }
-    private static func centroid(_ t: Theme) -> [Double]? { meanVec(t.captures.compactMap { $0.embedding }) }
-    private static func meanVec(_ vs: [[Double]]) -> [Double]? {
-        guard let first = vs.first else { return nil }
-        var s = [Double](repeating: 0, count: first.count)
-        for v in vs where v.count == first.count { for i in 0..<v.count { s[i] += v[i] } }
-        for i in 0..<s.count { s[i] /= Double(vs.count) }
-        return s
-    }
-    private static func cosCentered(_ a: [Double], _ b: [Double], _ center: [Double]?) -> Double {
-        func cn(_ v: [Double]) -> [Double] {
-            let c = (center?.count == v.count) ? zip(v, center!).map(-) : v
-            let m = c.reduce(0) { $0 + $1 * $1 }.squareRoot() + 1e-9
-            return c.map { $0 / m }
-        }
-        let x = cn(a), y = cn(b)
-        return zip(x, y).reduce(0) { $0 + $1.0 * $1.1 }
-    }
+    // 관련 주제: 임베딩 유사도 순위가 거칠어(spike ⑥) 엉뚱하게 묶여 제거함. 허브는 결정·한눈에·기록으로 충분.
 }
