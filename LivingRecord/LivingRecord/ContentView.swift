@@ -6,9 +6,8 @@ struct ContentView: View {
     @State private var tab = 0
     @Environment(AppLaunchState.self) private var launch    // S12 — 트리거 시 포착 탭으로
     @Environment(\.modelContext) private var context
-    @Environment(VaultStore.self) private var vault
     @Environment(ReminderStore.self) private var reminders
-    @Environment(\.scenePhase) private var scenePhase       // 양방향 자동 가져오기 + 리마인더 갱신
+    @Environment(\.scenePhase) private var scenePhase       // 리마인더 갱신
     private let tabCount = 5
 
     var body: some View {
@@ -45,9 +44,6 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
-            if vault.bidirectional && vault.vaultURL != nil {
-                _ = ObsidianSync.pull(context: context, vault: vault)   // 자동 양방향(토글 ON일 때만)
-            }
             reminders.reschedule(context: context)   // 되새김 알림 내용 최신화
         }
     }

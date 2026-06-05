@@ -5,14 +5,9 @@ import Observation
 @Observable
 final class VaultStore {
     private let key = "obsidianVaultBookmark"
-    private let kBidir = "obsidianBidirectional"
     private(set) var vaultURL: URL?
-    var bidirectional: Bool { didSet { UserDefaults.standard.set(bidirectional, forKey: kBidir) } }   // 자동 양방향(기본 OFF)
 
-    init() {
-        bidirectional = UserDefaults.standard.bool(forKey: kBidir)
-        vaultURL = resolve()
-    }
+    init() { vaultURL = resolve() }
 
     #if os(macOS)
     private static let createOpts: URL.BookmarkCreationOptions = [.withSecurityScope]
@@ -55,26 +50,5 @@ final class VaultStore {
         defer { if scoped { root.stopAccessingSecurityScopedResource() } }
         let url = root.appendingPathComponent(subdir, isDirectory: true).appendingPathComponent(filename)
         try? FileManager.default.removeItem(at: url)
-    }
-
-    // --- 양방향 동기화 지원 ---
-    func subdirExists(_ subdir: String) -> Bool {
-        guard let root = vaultURL else { return false }
-        let scoped = root.startAccessingSecurityScopedResource()
-        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
-        var isDir: ObjCBool = false
-        return FileManager.default.fileExists(atPath: root.appendingPathComponent(subdir).path, isDirectory: &isDir) && isDir.boolValue
-    }
-
-    /// 하위 폴더의 .md 파일들을 (파일명, 내용)으로 읽어옴(보안 스코프 안에서).
-    func listMarkdown(subdir: String) -> [(name: String, content: String)] {
-        guard let root = vaultURL else { return [] }
-        let scoped = root.startAccessingSecurityScopedResource()
-        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
-        let dir = root.appendingPathComponent(subdir, isDirectory: true)
-        guard let urls = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return [] }
-        return urls.filter { $0.pathExtension == "md" }.compactMap { url in
-            (try? String(contentsOf: url, encoding: .utf8)).map { (url.lastPathComponent, $0) }
-        }
     }
 }

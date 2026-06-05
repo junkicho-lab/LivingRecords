@@ -19,7 +19,7 @@ final class Capture {
     var embedding: [Double]?       // 512d 임베딩 (S4)
     var theme: Theme?              // 통합된 주제 (S4)
     var sortIndex: Double = 0      // 주제 내 수동 정렬값 (기본=생성시각). 클수록 위.
-    var mirrored: Bool = false     // Obsidian에 미러된 적 있나 (양방향 동기화 삭제 안전장치)
+    var mirrored: Bool = false     // (미사용) 양방향 Obsidian 철회 후 남은 필드 — 마이그레이션 회피 위해 보존
 
     init(text: String, createdAt: Date = .now, energy: Double? = nil, sealed: Bool = false) {
         self.id = UUID(); self.text = text; self.createdAt = createdAt
