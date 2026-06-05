@@ -10,8 +10,10 @@ struct CaptureListView: View {
     @Query(sort: \Theme.createdAt) private var themes: [Theme]
     @State private var query = ""
     @State private var semanticHits: [Capture] = []
+    @State private var range = DateRange()
 
     private var trimmed: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var browse: [Capture] { captures.filter { range.contains($0.createdAt) } }   // 기간 필터(검색 아닐 때)
 
     // 전문 검색(정확 포함, 공백/대소문자 무시).
     private var textMatches: [Capture] {
@@ -24,9 +26,11 @@ struct CaptureListView: View {
             List {
                 if trimmed.isEmpty {
                     Section {
-                        ForEach(captures) { row($0) }
+                        ForEach(browse) { row($0) }
                     } header: {
-                        Text("기록을 길게 눌러 다른 주제로 옮길 수 있어요. (좌우로 쓸면 탭 이동)")
+                        Text(range.kind == .all
+                             ? "기록을 길게 눌러 다른 주제로 옮길 수 있어요. (좌우로 쓸면 탭 이동)"
+                             : "\(range.kind.rawValue) · \(browse.count)개")
                             .textCase(nil)
                     }
                 } else {
@@ -48,6 +52,9 @@ struct CaptureListView: View {
                 }
             }
             .navigationTitle("기록")
+            .safeAreaInset(edge: .top) {
+                if trimmed.isEmpty { DateFilterBar(range: $range) }   // 검색 중엔 칩 숨김(검색은 전체에서)
+            }
             .searchable(text: $query, prompt: "기록 검색 (단어 또는 뜻)")
             .onSubmit(of: .search) { runSemantic() }
             .onChange(of: query) { _, _ in if trimmed.isEmpty { semanticHits = [] } }
@@ -55,6 +62,9 @@ struct CaptureListView: View {
                 if captures.isEmpty {
                     ContentUnavailableView("아직 포착이 없어요", systemImage: "mic",
                                            description: Text("포착 탭에서 말하거나 입력해 보세요."))
+                } else if trimmed.isEmpty && browse.isEmpty {
+                    ContentUnavailableView("이 기간엔 기록이 없어요", systemImage: "calendar",
+                                           description: Text("다른 기간 칩을 골라 보세요."))
                 } else if !trimmed.isEmpty && textMatches.isEmpty && semanticHits.isEmpty {
                     ContentUnavailableView("결과 없음", systemImage: "magnifyingglass",
                                            description: Text("리턴을 눌러 비슷한 뜻으로도 찾아볼 수 있어요."))

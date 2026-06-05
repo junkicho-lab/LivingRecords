@@ -9,10 +9,13 @@ struct DigestListView: View {
     @State private var building = false
     @State private var showWeekly = false
     @State private var showPeriod = false
+    @State private var range = DateRange()
+
+    private var filtered: [Digest] { digests.filter { range.contains($0.createdAt) } }   // 만든 시점 기준 기간 필터
 
     var body: some View {
         NavigationStack {
-            List(digests) { d in
+            List(filtered) { d in
                 NavigationLink {
                     DigestDetailView(digest: d)
                 } label: {
@@ -24,10 +27,14 @@ struct DigestListView: View {
                 }
             }
             .navigationTitle("정리")
+            .safeAreaInset(edge: .top) { DateFilterBar(range: $range) }
             .overlay {
                 if digests.isEmpty {
                     ContentUnavailableView("아직 정리가 없어요", systemImage: "doc.text",
                                            description: Text("오늘 포착을 모아 일일 정리를 만들어요."))
+                } else if filtered.isEmpty {
+                    ContentUnavailableView("이 기간엔 정리가 없어요", systemImage: "calendar",
+                                           description: Text("다른 기간 칩을 골라 보세요."))
                 }
             }
             .toolbar {
