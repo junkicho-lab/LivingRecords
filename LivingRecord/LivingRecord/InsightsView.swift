@@ -30,6 +30,7 @@ struct InsightsView: View {
                     VStack(spacing: 24) {
                         if let m = memory { resurfaced(m) }
                         summary
+                        throughlines
                         dailyCounts
                         energyTrend
                         topThemes
@@ -116,6 +117,29 @@ struct InsightsView: View {
                 }
                 .chartYScale(domain: 0...1)
                 .frame(height: 150)
+            }
+        }
+    }
+
+    // 긴 호흡의 줄기 — 여러 시기를 가로질러 이어진 주제
+    @ViewBuilder
+    private var throughlines: some View {
+        let lines = Throughlines.compute(themes)
+        if !lines.isEmpty {
+            card("오래 이어진 줄기") {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(lines) { t in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(t.theme.name).font(.callout.weight(.medium))
+                            Text("\(t.first, format: .dateTime.year().month()) ~ \(t.last, format: .dateTime.year().month()) · \(t.count)회")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Text("\(t.distinctWeeks)주에 걸쳐 이어짐")
+                                .font(.caption2).foregroundStyle(.indigo)
+                        }
+                    }
+                    Text("한 번 불타고 끝난 게 아니라, 여러 시기에 거듭 돌아온 주제예요.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
             }
         }
     }
