@@ -108,6 +108,8 @@ enum WikiBuilder {
     }
 
     // --- 관련 주제(중심 유사도, best-effort) ---
+    // 임베딩 순위가 거칠어(spike ⑥) 임계값을 보수적으로: 강한 근접만, 엉뚱한 묶임 방지(없으면 생략).
+    static let relatedThreshold = 0.30
     @MainActor
     private static func related(to theme: Theme, among themes: [Theme], limit: Int = 3) -> [String] {
         guard let base = centroid(theme) else { return [] }
@@ -116,7 +118,7 @@ enum WikiBuilder {
         for t in themes where t.persistentModelID != theme.persistentModelID {
             guard let v = centroid(t) else { continue }
             let s = cosCentered(base, v, center)
-            if s > 0.15 { scored.append((t.name, s)) }
+            if s > relatedThreshold { scored.append((t.name, s)) }
         }
         return scored.sorted { $0.1 > $1.1 }.prefix(limit).map { $0.0 }
     }
