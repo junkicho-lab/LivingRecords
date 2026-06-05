@@ -1,9 +1,16 @@
 # 생동하는 기록 (Living Record)
 
+![iOS 26+](https://img.shields.io/badge/iOS-26%2B-000000?logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-SwiftUI%20%C2%B7%20SwiftData-FA7343?logo=swift&logoColor=white)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE)
+[![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-lightgrey)](LICENSE-docs.md)
+[![Docs: KO + EN](https://img.shields.io/badge/docs-KO%20%2B%20EN-success)](docs/en/)
+[![Course: 8-week PBL](https://img.shields.io/badge/course-8--week%20PBL-orange)](docs/8주-강의계획서.md)
+
 > 말로 쏟아낸 생각을 로컬에 모아두면, AI가 분석·분류·정리해 일/주/기간 회고로 만들고,
 > 결국 **"나는 무엇을 지속할 것인가"** 를 돕는 iOS 앱.
 >
-> *동시에*, 이 저장소는 **한 앱이 구상→검증→79개 커밋으로 완성되는 과정**을 그대로 담은 **학습 프로젝트**다.
+> *동시에*, 이 저장소는 **한 앱이 구상→검증→83개 커밋으로 완성되는 과정**을 그대로 담은 **학습 프로젝트**다.
 > *English: see [`docs/en/`](docs/en/).*
 
 ---
