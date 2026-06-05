@@ -12,12 +12,15 @@ Korean originals live in `../` (the `docs/` folder).
 | Grading Rubric | [`grading-rubric.md`](grading-rubric.md) | `../채점-루브릭.md` | instructor |
 | Student Workbook | [`student-workbook.md`](student-workbook.md) | `../학생-워크북.md` | student |
 | Quiz / Exam Question Bank | [`question-bank.md`](question-bank.md) | `../문제은행.md` | instructor (answers appendix) |
+| Student Portfolio Template | [`student-portfolio-template.md`](student-portfolio-template.md) | `../학생-포트폴리오-템플릿.md` | student |
 
-## Primary source material (Korean, not translated)
-- `../concept.md` — design decisions & open questions
-- `../spike-findings.md` — on-device Korean AI validation (spikes ①–⑧)
-- `../v1-slices.md` … `../v4-slices.md` — per-phase build plans
-- `../사용설명서.md` — finished-app user guide
+## Primary source material (English translations)
+| Document | English | Korean original |
+|---|---|---|
+| Design decisions & open questions | [`concept.md`](concept.md) | `../concept.md` |
+| On-device Korean AI validation (spikes ①–⑧) | [`spike-findings.md`](spike-findings.md) | `../spike-findings.md` |
+| Build plans v1–v4 | [`v1-slices.md`](v1-slices.md) … [`v4-slices.md`](v4-slices.md) | `../v1-slices.md` … |
+| Finished-app user guide | [`user-guide.md`](user-guide.md) | `../사용설명서.md` |
 
 ## Notes for English readers
 - The app's UI and the captured notes are in **Korean**; feature names appear as *English (Korean)* on first use.
