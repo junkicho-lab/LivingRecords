@@ -25,14 +25,7 @@ struct CaptureListView: View {
         NavigationStack {
             List {
                 if trimmed.isEmpty {
-                    Section {
-                        ForEach(browse) { row($0) }
-                    } header: {
-                        Text(range.kind == .all
-                             ? "기록을 길게 눌러 다른 주제로 옮길 수 있어요. (좌우로 쓸면 탭 이동)"
-                             : "\(range.kind.rawValue) · \(browse.count)개")
-                            .textCase(nil)
-                    }
+                    ForEach(browse) { row($0) }
                 } else {
                     if !textMatches.isEmpty {
                         Section("정확히 포함 (\(textMatches.count))") {
@@ -52,9 +45,18 @@ struct CaptureListView: View {
                 }
             }
             .navigationTitle("기록")
-            .navigationBarTitleDisplayMode(.inline)   // 큰 제목과 칩 바 겹침 방지
+            .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top) {
-                if trimmed.isEmpty { DateFilterBar(range: $range) }   // 검색 중엔 칩 숨김(검색은 전체에서)
+                if trimmed.isEmpty {     // 검색 중엔 칩 숨김(검색은 전체에서)
+                    VStack(spacing: 4) {
+                        DateFilterBar(range: $range)
+                        Text(range.kind == .all ? "길게 눌러 옮기기 · 좌우로 쓸어 탭 이동"
+                                                 : "\(range.kind.rawValue) · \(browse.count)개")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .padding(.bottom, 6)
+                    .background(.bar)
+                }
             }
             .searchable(text: $query, prompt: "기록 검색 (단어 또는 뜻)")
             .onSubmit(of: .search) { runSemantic() }

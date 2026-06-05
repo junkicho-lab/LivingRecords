@@ -35,15 +35,15 @@ struct DateFilterBar: View {
     @Binding var range: DateRange
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     ForEach(DateRange.Kind.allCases) { k in
                         let on = range.kind == k
                         Button { range.kind = k } label: {
                             Text(k.rawValue)
-                                .font(.caption.weight(.medium))
-                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .font(.caption2.weight(.medium))
+                                .padding(.horizontal, 10).padding(.vertical, 4)
                                 .background(on ? Color.accentColor : Color.gray.opacity(0.15), in: Capsule())
                                 .foregroundStyle(on ? .white : .primary)
                         }
@@ -58,11 +58,10 @@ struct DateFilterBar: View {
                     Text("~").foregroundStyle(.secondary)
                     DatePicker("", selection: $range.to, in: range.from..., displayedComponents: .date).labelsHidden()
                 }
-                .font(.caption)
+                .font(.caption2)
                 .padding(.horizontal)
             }
         }
-        .padding(.vertical, 8)
-        .background(.bar)
+        .padding(.vertical, 4)   // 얇게 (배경은 호출부에서)
     }
 }

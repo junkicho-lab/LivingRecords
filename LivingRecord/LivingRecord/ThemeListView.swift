@@ -15,34 +15,35 @@ struct ThemeListView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    ForEach(themes) { t in
-                        NavigationLink {
-                            ThemeDetailView(theme: t)
-                        } label: {
-                            HStack {
-                                Text(t.name).lineLimit(1)
-                                Spacer()
-                                Text("\(t.captures.count)").font(.caption).foregroundStyle(.secondary)
-                            }
+                ForEach(themes) { t in
+                    NavigationLink {
+                        ThemeDetailView(theme: t)
+                    } label: {
+                        HStack {
+                            Text(t.name).lineLimit(1)
+                            Spacer()
+                            Text("\(t.captures.count)").font(.caption).foregroundStyle(.secondary)
                         }
-                        .contextMenu {
-                            Button { renameTarget = t; newName = t.name; renaming = true } label: {
-                                Label("이름 변경", systemImage: "pencil")
-                            }
-                            if themes.count > 1 {
-                                Button { mergeSource = t; merging = true } label: {
-                                    Label("다른 주제로 합치기", systemImage: "arrow.triangle.merge")
-                                }
+                    }
+                    .contextMenu {
+                        Button { renameTarget = t; newName = t.name; renaming = true } label: {
+                            Label("이름 변경", systemImage: "pencil")
+                        }
+                        if themes.count > 1 {
+                            Button { mergeSource = t; merging = true } label: {
+                                Label("다른 주제로 합치기", systemImage: "arrow.triangle.merge")
                             }
                         }
                     }
-                } header: {
-                    Text("주제를 길게 눌러 이름 변경·합치기 (좌우로 쓸면 탭 이동)")
-                        .textCase(nil)
                 }
             }
             .navigationTitle("주제")
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .top) {
+                Text("길게 눌러 이름 변경·합치기 · 좌우로 쓸어 탭 이동")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity).padding(.vertical, 6).background(.bar)
+            }
             .overlay {
                 if themes.isEmpty {
                     ContentUnavailableView("아직 주제가 없어요", systemImage: "circle.grid.cross",

@@ -27,8 +27,8 @@ struct DigestListView: View {
                 }
             }
             .navigationTitle("정리")
-            .navigationBarTitleDisplayMode(.inline)   // 큰 제목과 칩 바 겹침 방지
-            .safeAreaInset(edge: .top) { DateFilterBar(range: $range) }
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .top) { DateFilterBar(range: $range).padding(.bottom, 4).background(.bar) }
             .overlay {
                 if digests.isEmpty {
                     ContentUnavailableView("아직 정리가 없어요", systemImage: "doc.text",

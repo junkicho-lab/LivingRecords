@@ -39,6 +39,7 @@ struct InsightsView: View {
                 }
             }
             .navigationTitle("흐름")
+            .navigationBarTitleDisplayMode(.inline)
             .onAppear { memory = Resurfacer.daily(context: context) }
         }
     }
