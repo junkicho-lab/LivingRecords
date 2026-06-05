@@ -53,10 +53,14 @@ struct ThemeListView: View {
                 TextField("이름", text: $newName)
                 Button("저장") {
                     if let t = renameTarget {
+                        let old = t.name
                         let n = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !n.isEmpty {
+                        if !n.isEmpty && n != old {
                             t.name = n; try? context.save()
                             ObsidianMirrorImpl(store: vault).remirror(Array(t.captures))
+                            WikiBuilder.deleteTheme(named: old, vault: vault)   // 옛 허브 제거 → 새 이름으로
+                            WikiBuilder.updateTheme(t, context: context, vault: vault)
+                            WikiBuilder.updateIndex(context: context, vault: vault)
                         }
                     }
                 }
@@ -127,10 +131,14 @@ struct ThemeDetailView: View {
         .alert("주제 이름 변경", isPresented: $renaming) {
             TextField("이름", text: $newName)
             Button("저장") {
+                let old = theme.name
                 let n = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !n.isEmpty {
+                if !n.isEmpty && n != old {
                     theme.name = n; try? context.save()
                     ObsidianMirrorImpl(store: vault).remirror(Array(theme.captures))   // 링크 이름 갱신
+                    WikiBuilder.deleteTheme(named: old, vault: vault)
+                    WikiBuilder.updateTheme(theme, context: context, vault: vault)
+                    WikiBuilder.updateIndex(context: context, vault: vault)
                 }
             }
             Button("취소", role: .cancel) {}

@@ -38,6 +38,10 @@ enum Consolidator {
             try? context.save()
         }
         try? ObsidianMirrorImpl(store: vault).mirror(capture)   // 주제 확정 후 미러(주제 [[링크]] 포함, 봉인 제외)
+        if let th = capture.theme {                            // LLM wiki: 주제 허브·index 갱신
+            WikiBuilder.updateTheme(th, context: context, vault: vault)
+            WikiBuilder.updateIndex(context: context, vault: vault)
+        }
 
         // S8 — 의도 감지(결정적 어미 게이트). 있으면 약속(Commitment) 생성. 봉인 포함(다짐도 사적일 수 있음; 클라우드엔 안 감).
         let detector = IntentionDetectorImpl()

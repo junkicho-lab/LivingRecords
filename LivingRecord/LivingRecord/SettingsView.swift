@@ -33,7 +33,9 @@ struct SettingsView: View {
 // MARK: - Obsidian 볼트 (저장·단방향 미러·양방향 가져오기)
 struct ObsidianSettingsView: View {
     @Environment(VaultStore.self) private var vault
+    @Environment(\.modelContext) private var context
     @State private var picking = false
+    @State private var wikiMessage: String?
 
     var body: some View {
         Form {
@@ -46,6 +48,19 @@ struct ObsidianSettingsView: View {
                 Button(vault.vaultURL == nil ? "볼트 폴더 선택" : "볼트 폴더 변경") { picking = true }
             } footer: {
                 Text("포착·정리가 이 폴더에 마크다운으로 단방향 미러됩니다(Captures/·봉인/·Digests/). 봉인은 '봉인' 폴더로 따로 저장돼요(클라우드 종합엔 제외). 볼트가 iCloud 동기화되면 봉인도 기기를 떠나니 유의하세요.")
+            }
+            if vault.vaultURL != nil {
+                Section {
+                    Button {
+                        let n = WikiBuilder.rebuildAll(context: context, vault: vault)
+                        wikiMessage = "주제 허브 \(n)개 + 색인을 다시 만들었어요."
+                    } label: { Label("위키 다시 빌드 (전체)", systemImage: "square.stack.3d.up") }
+                    if let m = wikiMessage { Text(m).font(.caption).foregroundStyle(.secondary) }
+                } header: {
+                    Text("LLM 위키")
+                } footer: {
+                    Text("주제마다 허브 노트(Themes/)와 색인(index.md)을 만들어, 볼트를 LLM이 길찾아 읽을 수 있는 위키로 구성해요. 새 포착·큐레이션 때 자동 갱신되며, 기존 데이터엔 이 버튼으로 한 번 입혀요. 봉인은 제외됩니다.")
+                }
             }
         }
         .navigationTitle("Obsidian 볼트")

@@ -45,11 +45,13 @@ struct ObsidianMirrorImpl: ObsidianMirror {
     static func markdown(_ c: Capture) -> String {
         let iso = ISO8601DateFormatter().string(from: c.createdAt)
         let source = c.energy == nil ? "text" : "voice"
-        var fm = "---\ncreated: \(iso)\nsource: \(source)\n"
+        // LLM wiki: 기계 필드(id/type/theme) + 그래프 링크. id는 청크 주소용(읽기 전용 — 양방향 import 안 함).
+        var fm = "---\nid: \(c.id.uuidString)\ntype: capture\ncreated: \(iso)\nsource: \(source)\n"
         if let e = c.energy { fm += String(format: "energy: %.2f\n", e) }
+        if let name = c.theme?.name, !name.isEmpty { fm += "theme: \"\(WikiBuilder.yamlEscape(name))\"\n" }
         fm += "---\n\n\(c.text)\n"
-        if let name = c.theme?.name, !name.isEmpty {     // Obsidian 그래프용 주제 위키링크
-            fm += "\n주제: [[\(name)]]\n"
+        if let name = c.theme?.name, !name.isEmpty {     // 주제 허브로 연결되는 위키링크
+            fm += "\n주제: [[\(WikiBuilder.safeName(name))]]\n"
         }
         return fm
     }
