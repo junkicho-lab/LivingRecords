@@ -103,6 +103,12 @@ SwiftUI · SwiftData · SpeechTranscriber(STT) · Foundation Models(로컬 LLM) 
 NLContextualEmbedding(임베딩+중심화) · vDSP(prosody) · Swift Charts · CryptoKit(백업) ·
 App Intents/WidgetKit/UserNotifications · Claude API(옵트인 깊은 종합).
 
+## 라이선스 · 기여
+
+- **코드**(`LivingRecord/`·`spike/`·빌드 스크립트) → **MIT** ([`LICENSE`](LICENSE))
+- **문서·교재**(`docs/`) → **CC BY 4.0** ([`LICENSE-docs.md`](LICENSE-docs.md)) — 출처만 밝히면 수정·번역·상업적 이용 가능
+- 기여 환영 — 작업 규율(수직 슬라이스·스파이크 우선·프라이버시 절대 규칙·PR 체크리스트)은 [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
 ## 상태 · 비고
 
 - 빌드: ⌘R(실기기 권장). 경고 0 클린 빌드.
