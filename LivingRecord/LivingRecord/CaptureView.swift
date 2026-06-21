@@ -161,9 +161,10 @@ struct CaptureView: View {
                 let text = try await transcriber.transcribe(audioURL: url)
                 let trimmed = FillerCleaner.clean(text)   // 추임새 가벼운 정리(음성만)
                 if trimmed.isEmpty { flashStatus("인식 결과가 없어요") }
-                else {
-                    save(trimmed, energy: energy, sealed: sealed)
+                else if save(trimmed, energy: energy, sealed: sealed) {
                     flashStatus(sealed ? "봉인 저장됨 🔒" : "저장됨 ✓")
+                } else {
+                    status = "저장 실패 — 다시 시도해 주세요"   // 유실을 조용히 넘기지 않음
                 }
             } catch {
                 status = "오류: \(error.localizedDescription)"
@@ -178,7 +179,10 @@ struct CaptureView: View {
     private func saveText() {
         let t = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return }
-        save(t, energy: nil, sealed: sealNext)
+        guard save(t, energy: nil, sealed: sealNext) else {
+            status = "저장 실패 — 다시 시도해 주세요"   // 초안을 지우지 않아 재시도 가능
+            return
+        }
         draft = ""
         draftFocused = false        // 저장 후 키보드 내림
         flashStatus(sealNext ? "봉인 저장됨 🔒" : "저장됨 ✓")
@@ -193,12 +197,19 @@ struct CaptureView: View {
         }
     }
 
-    private func save(_ text: String, energy: Double?, sealed: Bool) {
+    // 저장 성공 여부를 반환 — 실패를 삼키면 포착이 조용히 유실되므로 호출부가 사용자에게 알리게 한다.
+    private func save(_ text: String, energy: Double?, sealed: Bool) -> Bool {
         let c = Capture(text: text, energy: energy, sealed: sealed)
         context.insert(c)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            context.delete(c)   // 미저장 객체를 컨텍스트에서 거둬 유령 포착 방지
+            return false
+        }
         Consolidator.enqueue(c, context: context, vault: vault)  // 통합 후 Obsidian 미러(주제 [[링크]] 포함)
         showEcho(for: text, excluding: c)
+        return true
     }
 
     // 포착 순간 연결 — 방금 적은 것과 의미가 가까운 옛 포착을 조용히 띄움(의미 검색 재활용).
