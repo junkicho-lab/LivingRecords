@@ -39,6 +39,12 @@
 - 오류 예: 추임새 '음'→'응'(사소, 추임새는 노이즈에 가까움). 포착은 편집 가능 + 요지 중심이라 92.8%면 충분.
 - **판정: SpeechTranscriber로 v1 확정. WhisperKit 불필요**(더 높은 정확도 필요 시에만 §3-11 대안).
 
+### ②-reserve 실기기 에셋 '예약(reserve)' 함정 — ✅ 해결 (2026-06-21)
+- 증상(실기기): `"cannot check the download status, ... is not subscribed to transcription.ko"`로 전사 실패.
+- 원인: `AssetInventory.reserve(locale:)`는 `async throws -> Bool`인데 `_ = try?`로 **Bool·throw를 둘 다 삼켰다.** 예약이 실패(false 반환 또는 throw)해도 그냥 진행 → 에셋 미구독 상태로 설치/전사에서 위 메시지로 뒤늦게 터짐. CLI 스파이크(②-new)는 예약 없이도 됐으나 **실기기는 예약 필수.**
+- 해결: ① 지원 확인은 구독 불필요한 `SpeechTranscriber.supportedLocales`로 먼저(`status(forModules:)`는 구독 요구 가능 → "cannot check download status"의 출처 의심이라 회피). ② `reserve`의 Bool을 확인하고 throw를 전파, 실패 시 예약 현황·한도를 담은 `STTError`로 원인 노출. ③ 예약 → 설치 순서 유지.
+- 교훈(v1 ⑥-b·⑦ 재확인): **결과를 반환하는 API는 `try?`로 삼키지 마라** — 실패가 엉뚱한 곳에서 원인 없이 터진다. 실기기에서 한국어 전사 정상 동작 확인.
+
 ## ③ Foundation Models (한국어 태깅·요약) — 🟡 작동하나 가드레일 리스크 (중요)
 
 - `SystemLanguageModel.default.availability == .available`. CLI에서 **작동**.
