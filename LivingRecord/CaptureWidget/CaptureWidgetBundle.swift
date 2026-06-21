@@ -7,5 +7,6 @@ struct CaptureWidgetBundle: WidgetBundle {
     var body: some Widget {
         CaptureWidget()
         CaptureWidgetControl()
+        SealedCaptureWidgetControl()
     }
 }

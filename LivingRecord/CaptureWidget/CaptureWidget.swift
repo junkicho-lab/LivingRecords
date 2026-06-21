@@ -21,15 +21,21 @@ struct CaptureWidgetEntryView: View {
 
     var body: some View {
         switch family {
-        case .accessoryCircular:                       // 잠금화면 원형
+        case .accessoryCircular:                       // 잠금화면 원형 — 탭 타깃 1개뿐 → 일반 포착만(봉인은 가로형/제어센터에서)
             Button(intent: StartCaptureIntent()) {
                 Image(systemName: "mic.fill").font(.title2)
             }
             .buttonStyle(.plain)
-        case .accessoryRectangular:                    // 잠금화면 가로
-            Button(intent: StartCaptureIntent()) {
-                Label("포착", systemImage: "mic.fill").font(.headline)
+        case .accessoryRectangular:                    // 잠금화면 가로 — 포착 + 봉인
+            HStack(spacing: 12) {
+                Button(intent: StartCaptureIntent()) {
+                    Label("포착", systemImage: "mic.fill")
+                }
+                Button(intent: StartSealedCaptureIntent()) {
+                    Label("봉인", systemImage: "lock.fill")
+                }
             }
+            .font(.callout)
             .buttonStyle(.plain)
         default:                                       // 홈 화면(systemSmall)
             VStack(spacing: 10) {
