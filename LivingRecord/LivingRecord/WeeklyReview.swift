@@ -193,11 +193,16 @@ enum WeeklyReview {
         let all = (try? context.fetch(FetchDescriptor<Commitment>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))) ?? []
         let inWindow = all.filter { $0.createdAt >= windowStart }
         let caps = (try? context.fetch(FetchDescriptor<Capture>())) ?? []
+        var changed = false   // 파생 상태가 실제로 바뀔 때만 저장 (매 onAppear/refresh 쓰기 방지 — 조회/명령 분리)
         for c in inWindow {
-            c.status = survival(c, caps: caps, now: now)
-            if c.status == .surviving { c.themeName = themeName(for: c.themeID, caps: caps) ?? c.themeName }  // 이름 변경 반영
+            let newStatus = survival(c, caps: caps, now: now)
+            if c.status != newStatus { c.status = newStatus; changed = true }
+            if newStatus == .surviving {
+                let nm = themeName(for: c.themeID, caps: caps) ?? c.themeName   // 이름 변경 반영
+                if c.themeName != nm { c.themeName = nm; changed = true }
+            }
         }
-        try? context.save()
+        if changed { try? context.save() }
         return inWindow
     }
 
