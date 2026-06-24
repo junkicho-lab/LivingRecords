@@ -330,24 +330,22 @@ enum WeeklyReview {
                 input += "- \(f.themeName): \(s)\n"
             }
         }
-        input += "이번 주 자주 돌아온 주제들:\n"
-        for c in cands.prefix(8) {
-            let ev = c.evolving == true ? "발전 중" : (c.evolving == false ? "비슷한 반복" : "")
-            let tr = c.trend == .rising ? "요즘 부쩍 늘어남" : (c.trend == .cooling ? "점점 잦아들고 식어감" : "꾸준")
-            let en = c.avgEnergy.map { String(format: "에너지 %.0f%%", $0*100) } ?? ""
-            let et = c.energyTrend.map { $0 > 0.05 ? "열기 오르는 중" : ($0 < -0.05 ? "열기 식는 중" : "") } ?? ""
-            input += "- \(c.theme.name): \(c.days)일 \(c.count)회, \(tr), \(ev) \(en) \(et)\n"
-        }
-        // S10 — 새로 가까워진 연결을 서술 입력에 보탬(영감)
-        let conns = connections(cands, now: now)
-        let newConns = conns.filter { $0.isNew }
-        if !newConns.isEmpty {
-            input += "이번 주 새로 가까워진 주제: " + newConns.prefix(3).map { "\($0.a.name)↔\($0.b.name)" }.joined(separator: ", ") + "\n"
+        // 의미 추출을 위해 통계가 아니라 '메모 원문 일부'를 먹인다(봉인 제외). 모델이 내용으로 이야기를 짚게.
+        input += "이번 주 자주 나온 주제와 메모:\n"
+        for c in cands.prefix(3) {
+            let snips = c.theme.captures
+                .filter { !$0.sealed && $0.createdAt >= start }
+                .sorted { $0.createdAt > $1.createdAt }
+                .prefix(3)
+                .map { "\"\(snippet($0.text))\"" }
+                .joined(separator: " / ")
+            let trend = c.trend == .rising ? " (늘어남)" : (c.trend == .cooling ? " (줄어듦)" : "")
+            input += "- \(c.theme.name)\(trend): \(snips)\n"
         }
         // S9 — 식어가는 줄기를 서술 입력에 보탬
         let cooling = coolingThemes(context: context, now: now)
         if !cooling.isEmpty {
-            input += "한때 뜨거웠다 식어가는 주제: " + cooling.prefix(5).map {
+            input += "요즘 뜸해진 주제: " + cooling.prefix(5).map {
                 "\($0.theme.name)(한때 \($0.priorCount)회, \($0.daysSinceLast)일째 조용)"
             }.joined(separator: ", ") + "\n"
         }
@@ -360,7 +358,7 @@ enum WeeklyReview {
                 input += "- \(c.text) (\(st))\n"
             }
         }
-        let localFallback = "이번 주는 \(cands.prefix(3).map { $0.theme.name }.joined(separator: ", ")) 같은 주제가 자주 돌아왔어요."
+        let localFallback = "이번 주는 \(cands.prefix(3).map { $0.theme.name }.joined(separator: ", ")) 등의 주제가 자주 나왔다."
         var cloud = false
         var narr: String?
         if consent.canSendToCloud, let key = consent.apiKey {
@@ -373,7 +371,7 @@ enum WeeklyReview {
         if narr == nil {   // 클라우드 OFF·실패 → 로컬 종합
             let style = Templates.activeDirective(context: context)   // 사용자 템플릿 스타일
             narr = await synth(
-                "너는 한 주를 같이 돌아보는 친구다. 쉽고 일상적인 말과 짧은 문장으로 써라. '마음의 방향·줄기·흐름' 같은 추상적·현학적 표현은 쓰지 마라. 먼저 전에 정한 것이 어떻게 됐는지 짚고(이어졌는지/조용해졌는지), 다음으로 이번 주 어떤 주제가 자주 나왔고 무엇이 늘고 무엇이 줄었는지 구체적 사실로 말하라. 단순 나열은 말 것. 한국어. 스타일: \(style)",
+                "너는 이번 주를 담담히 지켜본 관찰자다. 위 메모 내용을 읽고 '무슨 이야기였는지' 의미를 짚어 3~4문장으로 적는다. 횟수·날짜·통계는 말하지 말고(목록이 보여준다), 메모가 무엇에 관한 것이었고 무엇이 이어지고 무엇이 바뀌는지 내용 위주로. 원문을 그대로 옮기지 말고 요약·해석한다. 감탄·격려·평가 없이 차분한 평서문(~다), 쉬운 말, 짧은 문장, 추상적 비유 금지. 한국어. 스타일: \(style)",
                 input)
         }
 
@@ -381,43 +379,41 @@ enum WeeklyReview {
         var md = "## 주간 회고 (\(df.string(from: start)) ~ \(df.string(from: now)))\n\n"
         if cloud { md += "☁️ 깊은 종합(클라우드)\n\n" }
         md += "\(narr ?? localFallback)\n\n"
-        if !follow.isEmpty {
-            md += "**전에 정한 것들, 그 뒤로**\n"
-            for f in follow.prefix(6) {
-                let mark: String
-                switch f.outcome {
-                case .sustaining:  mark = "이어짐 ✓ (\(f.recentCount)회)"
-                case .slipping:    mark = "조용해짐"
-                case .resurfacing: mark = "다시 올라옴 ↑ (\(f.recentCount)회)"
-                case .holding:     mark = "보류 중"
-                }
-                md += "- \(f.themeName) — \(PeriodReview.verdictLabel(f.verdict))했는데 → \(mark)\n"
-            }
-            md += "\n"
-        }
-        md += "**자주 돌아온 주제**\n"
-        for c in cands.prefix(8) {
-            let ev = c.evolving == true ? " 🌱새로워짐" : (c.evolving == false ? " 🔁비슷한 반복" : "")
-            let tr = c.trend == .rising ? " ↑늘어남" : (c.trend == .cooling ? " ↓줄어듦" : "")
-            md += "- \(c.theme.name) — \(c.days)일·\(c.count)회\(tr)\(ev)\n"
+
+        // 핵심 우선 정렬: 이번 주 살아있는 것 → 뜸해진 것 → 다짐 → 지난 결정 → 보조(연결). 각 줄은 말로 풀어 적는다.
+        md += "### 자주 돌아온 주제\n"   // 상위 3개. 질적 신호를 앞에, 횟수는 괄호로 뒤에.
+        for c in cands.prefix(3) {
+            var notes: [String] = []
+            if c.trend == .rising { notes.append("늘어남") } else if c.trend == .cooling { notes.append("줄어듦") }
+            if c.evolving == true { notes.append("새로워짐") } else if c.evolving == false { notes.append("비슷한 반복") }
+            let tail = notes.isEmpty ? "\(c.count)회" : "\(notes.joined(separator: ", ")) (\(c.count)회)"
+            md += "- \(c.theme.name) — \(tail)\n"
         }
         if !cooling.isEmpty {
-            md += "\n**❄️ 요즘 뜸해진 주제**\n"
-            for c in cooling.prefix(6) {
+            md += "\n### 요즘 뜸해진 주제\n"   // 상위 3개
+            for c in cooling.prefix(3) {
                 md += "- \(c.theme.name) — 한때 \(c.priorCount)회, \(c.daysSinceLast)일째 조용\n"
             }
         }
-        if !conns.isEmpty {
-            md += "\n**서로 가까운 주제**\n"
-            for c in conns.prefix(5) {
-                md += "- \(c.a.name) ↔ \(c.b.name)\(c.isNew ? " (새 연결)" : "")\n"
+        if !coms.isEmpty {
+            md += "\n### 이번 주 다짐\n"   // 상위 3개, 상태 순. 텍스트의 마크다운(*) 제거.
+            for c in coms.sorted(by: { comRank($0.status) < comRank($1.status) }).prefix(3) {
+                let mark = c.status == .surviving ? "이어지는 중" : (c.status == .faded ? "잠잠해짐" : "막 시작")
+                let text = c.text.replacingOccurrences(of: "*", with: "").trimmingCharacters(in: .whitespaces)
+                md += "- \(text) — \(mark)\n"
             }
         }
-        if !coms.isEmpty {
-            md += "\n**이번 주 다짐**\n"
-            for c in coms.prefix(8) {
-                let mark = c.status == .surviving ? "이어지는 중 ✓" : (c.status == .faded ? "잠잠해짐" : "막 시작")
-                md += "- \(c.text) — \(mark)\n"
+        if !follow.isEmpty {
+            md += "\n### 전에 정한 것, 그 뒤\n"
+            for f in follow.prefix(3) {
+                let mark: String
+                switch f.outcome {
+                case .sustaining:  mark = "이어짐 (\(f.recentCount)회)"
+                case .slipping:    mark = "조용해짐"
+                case .resurfacing: mark = "다시 올라옴 (\(f.recentCount)회)"
+                case .holding:     mark = "보류 중"
+                }
+                md += "- \(f.themeName) — \(PeriodReview.verdictLabel(f.verdict))하기로 → \(mark)\n"
             }
         }
 
@@ -428,6 +424,17 @@ enum WeeklyReview {
         context.insert(d); try? context.save()
         try? ObsidianMirrorImpl(store: vault).mirror(d)
         return d
+    }
+
+    // 다짐 정렬용 — 이어지는 중 → 막 시작 → 잠잠해짐.
+    private static func comRank(_ s: CommitmentStatus) -> Int {
+        switch s { case .surviving: 0; case .open: 1; case .faded: 2 }
+    }
+
+    // 서술 입력용 짧은 스니펫(한 줄, 50자).
+    private static func snippet(_ t: String) -> String {
+        let s = t.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
+        return s.count > 50 ? String(s.prefix(50)) + "…" : s
     }
 
     private static func synth(_ instruction: String, _ input: String) async -> String? {

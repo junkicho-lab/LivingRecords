@@ -46,7 +46,7 @@ enum PeriodReview {
         }
         if narr == nil {
             let style = Templates.activeDirective(context: context)
-            narr = await synth("너는 긴 기간을 같이 돌아보는 친구다. 쉽고 일상적인 말과 짧은 문장으로 써라. '큰 흐름' 같은 추상적·현학적 표현은 피하고 구체적 사실 위주로. 이 기간에 어떤 주제가 꾸준히 나왔고 무엇을 이어가거나 접기로 정했는지 짚어라. 단순 나열은 말 것. 스타일: \(style)", input)
+            narr = await synth("너는 이 기간을 담담히 지켜보는 관찰자다. 감탄·격려·평가 없이 본 것을 적되, 모든 문장을 '~을 지켜본다, ~로 이어지는 것을 본다'처럼 관찰자의 현재형 동사('지켜본다/본다')로 끝맺는다. 쉬운 말, 짧은 문장. '큰 흐름' 같은 추상적·현학적 비유는 쓰지 않는다. 이 기간에 어떤 주제가 꾸준히 나왔고 무엇을 이어가거나 접기로 정했는지 구체적 사실로. 단순 나열은 말 것. 한국어. 스타일: \(style)", input)
         }
 
         let df = DateFormatter(); df.dateFormat = "yyyy.M.d"; df.locale = Locale(identifier: "ko_KR")
@@ -54,10 +54,10 @@ enum PeriodReview {
         if cloud { md += "☁️ 깊은 종합(클라우드)\n\n" }
         md += (narr ?? "이 기간엔 \(recurring.prefix(3).map { $0.key }.joined(separator: ", ")) 같은 주제가 이어졌어요.") + "\n\n"
         md += "**자주 돌아온 주제**\n"
-        for (name, v) in recurring.prefix(10) { md += "- \(name) — \(v.days.count)일·\(v.count)회\n" }
+        for (name, v) in recurring.prefix(3) { md += "- \(name) — \(v.days.count)일·\(v.count)회\n" }
         if !periodDecisions.isEmpty {
             md += "\n**내린 결정과 그 이후**\n"
-            for d in periodDecisions.prefix(20) {
+            for d in periodDecisions.prefix(3) {
                 let after = d.theme?.captures.filter { $0.createdAt > d.createdAt }.count ?? 0
                 let mark: String   // 결정 이후 그 주제가 어떻게 됐나(누적 피드백)
                 switch d.verdict {

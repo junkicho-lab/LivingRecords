@@ -53,7 +53,7 @@ enum DailyDigest {
 
         let style = Templates.activeDirective(context: context)   // 사용자 템플릿 스타일
         let insight = await synth(
-            instruction: "너는 오늘 하루를 같이 돌아보는 친구다. 쉽고 일상적인 말과 짧은 문장으로 써라. '흐름·마음의 방향' 같은 추상적·현학적 표현은 쓰지 마라. 오늘 어떤 생각을 했고 무엇이 요즘과 이어지는지·무엇이 새로운지 구체적 사실로 짚어라. 단순 나열은 말 것. 스타일: \(style)",
+            instruction: "너는 오늘 하루를 담담히 지켜본 관찰자다. 감탄·격려·평가 없이, 본 것을 차분한 평서문(~다)으로 적는다. 쉬운 말, 짧은 문장. '흐름·마음의 방향' 같은 추상적·현학적 비유는 쓰지 않는다. 오늘 무엇을 생각했고 무엇이 요즘과 이어지는지·무엇이 새로운지 구체적 사실로 2~3문장. 스타일: \(style)",
             input: input)
         md += (insight ?? "오늘은 \(order.joined(separator: ", "))에 대한 생각을 남겼어요.") + "\n\n"
 
@@ -62,12 +62,11 @@ enum DailyDigest {
         if !recurring.isEmpty {
             md += "🔁 며칠째 이어진 주제: " + recurring.map { "\($0.name)(최근 \($0.days)일)" }.joined(separator: " · ") + "\n\n"
         }
-        md += "오늘 다룬 것: " + order.joined(separator: " · ") + "\n"
 
         let q = await synth(
-            instruction: "다음 생각들을 보고 내일 이어서 더 깊이 생각해볼 질문 하나만 한국어로. 질문만, 한 문장. 뻔하지 않게.",
+            instruction: "다음 생각들을 보고 내일 이어서 생각해볼 질문 하나만 한국어로. 다른 말 없이 질문 한 문장만. 뻔하지 않게.",
             input: input) ?? "오늘 가장 마음이 머문 생각은 무엇이었나요?"
-        md += "\n**내일 이어볼 질문**\n- \(q)\n"
+        md += "\n**내일 이어볼 질문**\n\(q)\n"
 
         let d = Digest(kind: .daily, periodStart: start, periodEnd: end, narrative: md, generatedInCloud: false)
         d.sealedDerived = today.contains { $0.sealed }   // 봉인 원문이 서술 합성에 들어갔으면 봉인/로
