@@ -46,6 +46,20 @@ struct ContentView: View {
             guard phase == .active else { return }
             reminders.reschedule(context: context)   // 되새김 알림 내용 최신화
         }
+        .sheet(isPresented: Binding(get: { launch.pendingDecisionThemeID != nil },
+                                    set: { if !$0 { clearDecision() } })) {
+            if let s = launch.pendingDecisionThemeID, let id = UUID(uuidString: s) {
+                DecisionCardView(themeID: id,
+                                 question: launch.pendingDecisionQuestion ?? "이 주제를 놓아줄까요?") {
+                    clearDecision()
+                }
+            }
+        }
+    }
+
+    private func clearDecision() {
+        launch.pendingDecisionThemeID = nil
+        launch.pendingDecisionQuestion = nil
     }
 }
 
