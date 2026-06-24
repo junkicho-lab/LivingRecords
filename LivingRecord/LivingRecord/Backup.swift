@@ -21,11 +21,13 @@ struct CaptureDTO: Codable {
     var id: UUID; var text: String; var createdAt: Date; var energy: Double?
     var sealed: Bool; var tagCandidates: [String]; var embedding: [Double]?
     var themeID: UUID?; var sortIndex: Double
+    var userConfirmed: Bool?   // 옵셔널 — 이 필드 이전 백업도 디코드되게(없으면 false)
 }
 struct ThemeDTO: Codable { var id: UUID; var name: String; var stateRaw: String; var pinned: Bool; var createdAt: Date }
 struct DigestDTO: Codable {
     var id: UUID; var kindRaw: String; var periodStart: Date; var periodEnd: Date
     var narrative: String; var generatedInCloud: Bool; var createdAt: Date
+    var sealedDerived: Bool?   // 옵셔널 — 이 필드 이전 백업도 디코드되게(없으면 false)
 }
 struct DecisionDTO: Codable { var id: UUID; var themeID: UUID?; var verdictRaw: String; var reason: String?; var createdAt: Date }
 struct CommitmentDTO: Codable { var id: UUID; var text: String; var createdAt: Date; var statusRaw: String; var themeID: UUID?; var themeName: String }
@@ -48,10 +50,10 @@ enum BackupService {
             exportedAt: Date(),
             captures: caps.map { CaptureDTO(id: $0.id, text: $0.text, createdAt: $0.createdAt, energy: $0.energy,
                 sealed: $0.sealed, tagCandidates: $0.tagCandidates, embedding: $0.embedding,
-                themeID: $0.theme?.id, sortIndex: $0.sortIndex) },
+                themeID: $0.theme?.id, sortIndex: $0.sortIndex, userConfirmed: $0.userConfirmed) },
             themes: themes.map { ThemeDTO(id: $0.id, name: $0.name, stateRaw: $0.stateRaw, pinned: $0.pinned, createdAt: $0.createdAt) },
             digests: digests.map { DigestDTO(id: $0.id, kindRaw: $0.kindRaw, periodStart: $0.periodStart, periodEnd: $0.periodEnd,
-                narrative: $0.narrative, generatedInCloud: $0.generatedInCloud, createdAt: $0.createdAt) },
+                narrative: $0.narrative, generatedInCloud: $0.generatedInCloud, createdAt: $0.createdAt, sealedDerived: $0.sealedDerived) },
             decisions: decisions.map { DecisionDTO(id: $0.id, themeID: $0.theme?.id, verdictRaw: $0.verdictRaw, reason: $0.reason, createdAt: $0.createdAt) },
             commitments: coms.map { CommitmentDTO(id: $0.id, text: $0.text, createdAt: $0.createdAt, statusRaw: $0.statusRaw, themeID: $0.themeID, themeName: $0.themeName) }
         )
@@ -101,13 +103,15 @@ enum BackupService {
             let cap = Capture(text: c.text, createdAt: c.createdAt, energy: c.energy, sealed: c.sealed)
             cap.id = c.id; cap.tagCandidates = c.tagCandidates; cap.embedding = c.embedding
             cap.sortIndex = c.sortIndex; cap.theme = c.themeID.flatMap { themeByID[$0] }
+            cap.userConfirmed = c.userConfirmed ?? false
             context.insert(cap); added += 1
         }
         let existingDigIDs = Set(((try? context.fetch(FetchDescriptor<Digest>())) ?? []).map { $0.id })
         for d in file.digests where !existingDigIDs.contains(d.id) {
             let dig = Digest(kind: DigestKind(rawValue: d.kindRaw) ?? .daily, periodStart: d.periodStart,
                              periodEnd: d.periodEnd, narrative: d.narrative, generatedInCloud: d.generatedInCloud)
-            dig.id = d.id; dig.createdAt = d.createdAt; context.insert(dig); added += 1
+            dig.id = d.id; dig.createdAt = d.createdAt; dig.sealedDerived = d.sealedDerived ?? false
+            context.insert(dig); added += 1
         }
         let existingDecIDs = Set(((try? context.fetch(FetchDescriptor<Decision>())) ?? []).map { $0.id })
         for d in file.decisions where !existingDecIDs.contains(d.id) {

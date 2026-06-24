@@ -4,7 +4,7 @@ import SwiftData
 // S0 스캐폴딩 — concept.md §4 데이터 모델. 필드는 슬라이스 진행하며 채워짐(주석의 S# 참고).
 
 enum ThemeState: String, Codable { case active, looping, cooling, decided }   // 활성/맴돎/냉각/결정됨
-enum DigestKind: String, Codable { case daily, weekly, period }
+enum DigestKind: String, Codable { case daily, weekly, period, note }   // note = 사용자가 직접 쓴 생각
 enum Verdict: String, Codable { case sustain, hold, drop }                    // 지속/보류/접기
 enum CommitmentStatus: String, Codable { case open, surviving, faded }        // 약속: 진행중/살아남음/잠잠해짐 (S8)
 
@@ -20,6 +20,7 @@ final class Capture {
     var theme: Theme?              // 통합된 주제 (S4)
     var sortIndex: Double = 0      // 주제 내 수동 정렬값 (기본=생성시각). 클수록 위.
     var mirrored: Bool = false     // (미사용) 양방향 Obsidian 철회 후 남은 필드 — 마이그레이션 회피 위해 보존
+    var userConfirmed: Bool = false // 사용자가 직접 이 주제로 옮김/추출 → 배정 학습의 '확정 범례'(온디바이스)
 
     init(text: String, createdAt: Date = .now, energy: Double? = nil, sealed: Bool = false) {
         self.id = UUID(); self.text = text; self.createdAt = createdAt
@@ -58,6 +59,7 @@ final class Digest {
     var narrative: String          // 가공된 서술글
     var generatedInCloud: Bool     // 깊은 종합(클라우드) 여부
     var createdAt: Date
+    var sealedDerived: Bool = false // 봉인 포착에서 합성됨 → 미러를 봉인/로(수정·백업에도 보존)
 
     var kind: DigestKind { DigestKind(rawValue: kindRaw) ?? .daily }
     init(kind: DigestKind, periodStart: Date, periodEnd: Date,
