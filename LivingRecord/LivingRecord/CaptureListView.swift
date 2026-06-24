@@ -11,6 +11,8 @@ struct CaptureListView: View {
     @State private var query = ""
     @State private var semanticHits: [Capture] = []
     @State private var range = DateRange()
+    @State private var editTarget: Capture?     // 내용 수정 대상(음성 오탈자 교정)
+    @State private var editText = ""
 
     private var trimmed: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var browse: [Capture] { captures.filter { range.contains($0.createdAt) } }   // 기간 필터(검색 아닐 때)
@@ -73,7 +75,41 @@ struct CaptureListView: View {
                                            description: Text("리턴을 눌러 비슷한 뜻으로도 찾아볼 수 있어요."))
                 }
             }
+            .sheet(item: $editTarget) { c in
+                NavigationStack {
+                    Form {
+                        Section {
+                            TextField("내용", text: $editText, axis: .vertical)
+                                .lineLimit(3...14)
+                        } footer: {
+                            Text("음성 인식 오탈자를 고칠 수 있어요. 저장하면 검색·미러도 함께 갱신됩니다. (주제는 그대로 유지)")
+                        }
+                    }
+                    .navigationTitle("내용 수정")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("취소") { editTarget = nil } }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("저장") { saveEdit(c) }
+                                .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
         }
+    }
+
+    // 원문 수정(오탈자 교정). 텍스트만 바꾸고 주제는 유지. 임베딩·미러·허브 스니펫을 갱신.
+    private func saveEdit(_ c: Capture) {
+        let t = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+        editTarget = nil
+        guard !t.isEmpty, t != c.text else { return }
+        c.text = t
+        c.embedding = EmbedderImpl.shared.embed(t)   // 텍스트 바뀌면 임베딩도 갱신(검색·메아리 일관)
+        try? context.save()
+        ObsidianMirrorImpl(store: vault).remirror([c])                  // 미러 .md 갱신(봉인 폴더 포함)
+        if let theme = c.theme { WikiBuilder.updateTheme(theme, context: context, vault: vault) }   // 허브 스니펫 갱신
     }
 
     // 검색 실행 시에만 의미 검색(매 타자마다 임베딩하지 않음).
@@ -105,6 +141,9 @@ struct CaptureListView: View {
         }
         .padding(.vertical, 2)
         .contextMenu {
+            Button { editTarget = c; editText = c.text } label: {
+                Label("내용 수정", systemImage: "square.and.pencil")
+            }
             Section("다른 주제로 옮기기") {
                 ForEach(themes.filter { $0.id != c.theme?.id }) { t in
                     Button(t.name) { Curation.move([c], to: t, context: context, vault: vault) }
