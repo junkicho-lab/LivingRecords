@@ -13,6 +13,7 @@ struct CaptureListView: View {
     @State private var range = DateRange()
     @State private var editTarget: Capture?     // 내용 수정 대상(음성 오탈자 교정)
     @State private var editText = ""
+    @State private var pendingDelete: Capture?  // 삭제 확인 대상
 
     private var trimmed: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var browse: [Capture] { captures.filter { range.contains($0.createdAt) } }   // 기간 필터(검색 아닐 때)
@@ -97,6 +98,13 @@ struct CaptureListView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+            .confirmationDialog("이 기록을 삭제할까요?",
+                                isPresented: Binding(get: { pendingDelete != nil },
+                                                     set: { if !$0 { pendingDelete = nil } }),
+                                titleVisibility: .visible, presenting: pendingDelete) { c in
+                Button("삭제", role: .destructive) { deleteCapture(c) }
+                Button("취소", role: .cancel) {}
+            }
         }
     }
 
@@ -144,6 +152,9 @@ struct CaptureListView: View {
             Button { editTarget = c; editText = c.text } label: {
                 Label("내용 수정", systemImage: "square.and.pencil")
             }
+            Button(role: .destructive) { pendingDelete = c } label: {
+                Label("기록 삭제", systemImage: "trash")
+            }
             Section("다른 주제로 옮기기") {
                 ForEach(themes.filter { $0.id != c.theme?.id }) { t in
                     Button(t.name) { Curation.move([c], to: t, context: context, vault: vault) }
@@ -152,18 +163,24 @@ struct CaptureListView: View {
                     Label("새 주제로 추출", systemImage: "plus.circle")
                 }
             }
-            Button(role: .destructive) { deleteCapture(c) } label: {
-                Label("기록 삭제", systemImage: "trash")
-            }
         }
     }
 
     private func deleteCapture(_ c: Capture) {
-        let theme = c.theme
+        let host = c.theme
         ObsidianMirrorImpl(store: vault).delete(c)          // 미러 .md 제거
         context.delete(c)
-        if let theme, theme.captures.isEmpty { context.delete(theme) }   // 빈 주제 정리
         try? context.save()
+        if let host {
+            if host.captures.isEmpty {                      // 빈 주제 정리 + 허브 삭제
+                let name = host.name
+                context.delete(host); try? context.save()
+                WikiBuilder.deleteTheme(named: name, vault: vault)
+            } else {
+                WikiBuilder.updateTheme(host, context: context, vault: vault)   // 허브에서 그 줄 제거
+            }
+            WikiBuilder.updateIndex(context: context, vault: vault)
+        }
     }
 
     @ViewBuilder

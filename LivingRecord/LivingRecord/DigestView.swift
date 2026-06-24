@@ -26,6 +26,9 @@ struct DigestListView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) { deleteDigest(d) } label: { Label("삭제", systemImage: "trash") }
+                }
             }
             .navigationTitle("정리")
             .navigationBarTitleDisplayMode(.inline)
@@ -76,6 +79,13 @@ struct DigestListView: View {
         }
     }
 
+    // 정리 삭제. 미러 .md도 제거.
+    private func deleteDigest(_ d: Digest) {
+        ObsidianMirrorImpl(store: vault).delete(d)
+        context.delete(d)
+        try? context.save()
+    }
+
     // 사용자가 직접 쓴 생각을 정리(note)로 저장. 봉인 아님 → Digests/로 미러.
     private func saveNote(_ text: String) {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -96,7 +106,9 @@ struct DigestDetailView: View {
     let digest: Digest
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
+    @Environment(\.dismiss) private var dismiss
     @State private var editing = false
+    @State private var confirmingDelete = false
 
     var body: some View {
         ScrollView {
@@ -107,11 +119,18 @@ struct DigestDetailView: View {
         .navigationTitle("정리")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { editing = true } label: { Label("수정", systemImage: "square.and.pencil") }
+                Menu {
+                    Button { editing = true } label: { Label("수정", systemImage: "square.and.pencil") }
+                    Button(role: .destructive) { confirmingDelete = true } label: { Label("삭제", systemImage: "trash") }
+                } label: { Image(systemName: "ellipsis.circle") }
             }
         }
         .sheet(isPresented: $editing) {
             DigestEditorView(title: "정리 수정", text: digest.narrative) { saveEdit($0) }
+        }
+        .confirmationDialog("이 정리를 삭제할까요?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("삭제", role: .destructive) { deleteDigest() }
+            Button("취소", role: .cancel) {}
         }
     }
 
@@ -120,6 +139,14 @@ struct DigestDetailView: View {
             markdown: digest.narrative,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(digest.narrative)
         return Text(attr)
+    }
+
+    // 정리 삭제. 미러 .md 제거 후 화면 닫기.
+    private func deleteDigest() {
+        ObsidianMirrorImpl(store: vault).delete(digest)
+        context.delete(digest)
+        try? context.save()
+        dismiss()
     }
 
     // 정리 본문 수정. 종류·봉인 파생 여부는 유지하고 본문만 바꿔 다시 미러.

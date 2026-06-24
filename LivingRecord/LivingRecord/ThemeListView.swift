@@ -91,6 +91,7 @@ struct ThemeDetailView: View {
     @State private var merging = false
     @State private var editTarget: Capture?     // 내용 수정 대상(음성 오탈자 교정)
     @State private var editText = ""
+    @State private var pendingDelete: Capture?  // 삭제 확인 대상
 
     private var sorted: [Capture] { theme.captures.sorted { $0.sortIndex > $1.sortIndex } }
     private var others: [Theme] { allThemes.filter { $0.id != theme.id } }
@@ -107,6 +108,9 @@ struct ThemeDetailView: View {
                     .contextMenu {
                         Button { editTarget = c; editText = c.text } label: {
                             Label("내용 수정", systemImage: "square.and.pencil")
+                        }
+                        Button(role: .destructive) { pendingDelete = c } label: {
+                            Label("기록 삭제", systemImage: "trash")
                         }
                         Section("다른 주제로 이동") {
                             ForEach(others) { t in
@@ -174,10 +178,35 @@ struct ThemeDetailView: View {
             }
             .presentationDetents([.medium, .large])
         }
+        .confirmationDialog("이 기록을 삭제할까요?",
+                            isPresented: Binding(get: { pendingDelete != nil },
+                                                 set: { if !$0 { pendingDelete = nil } }),
+                            titleVisibility: .visible, presenting: pendingDelete) { c in
+            Button("삭제", role: .destructive) { deleteCapture(c) }
+            Button("취소", role: .cancel) {}
+        }
     }
 
     private func dismissIfEmpty() {
         if theme.captures.isEmpty { dismiss() }
+    }
+
+    // 기록 삭제. 미러 .md 제거 + 빈 주제면 주제·허브까지 정리하고 화면 닫기.
+    private func deleteCapture(_ c: Capture) {
+        ObsidianMirrorImpl(store: vault).delete(c)   // 미러 .md 제거(봉인 폴더 포함)
+        context.delete(c)
+        try? context.save()
+        if theme.captures.isEmpty {                  // 마지막 기록까지 지움 → 주제 정리 후 닫기
+            let name = theme.name
+            context.delete(theme)
+            try? context.save()
+            WikiBuilder.deleteTheme(named: name, vault: vault)
+            WikiBuilder.updateIndex(context: context, vault: vault)
+            dismiss()
+        } else {
+            WikiBuilder.updateTheme(theme, context: context, vault: vault)   // 허브에서 그 줄 제거
+            WikiBuilder.updateIndex(context: context, vault: vault)
+        }
     }
 
     // 원문 수정(오탈자 교정). 텍스트만 바꾸고 주제는 유지. 임베딩·미러·허브 스니펫을 갱신.
