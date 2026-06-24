@@ -134,11 +134,37 @@ struct DigestDetailView: View {
         }
     }
 
+    // 정리본은 마크다운(제목·불릿·굵게)이다. Text 하나로는 블록 표식이 그대로 보이므로 줄 단위로 렌더한다.
     private var content: some View {
-        let attr = (try? AttributedString(
-            markdown: digest.narrative,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(digest.narrative)
-        return Text(attr)
+        VStack(alignment: .leading, spacing: 7) {
+            ForEach(Array(digest.narrative.components(separatedBy: "\n").enumerated()), id: \.offset) { _, raw in
+                lineView(raw)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func lineView(_ raw: String) -> some View {
+        let t = raw.trimmingCharacters(in: .whitespaces)
+        if t.isEmpty {
+            Color.clear.frame(height: 3)
+        } else if t.hasPrefix("### ") {
+            Text(inline(String(t.dropFirst(4)))).font(.headline).padding(.top, 8)
+        } else if t.hasPrefix("## ") {
+            Text(inline(String(t.dropFirst(3)))).font(.title3.bold()).padding(.bottom, 2)
+        } else if t.hasPrefix("- ") {
+            HStack(alignment: .top, spacing: 8) {
+                Text("•").foregroundStyle(.secondary)
+                Text(inline(String(t.dropFirst(2)))).frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } else {
+            Text(inline(t)).frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func inline(_ s: String) -> AttributedString {
+        (try? AttributedString(markdown: s,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(s)
     }
 
     // 정리 삭제. 미러 .md 제거 후 화면 닫기.
