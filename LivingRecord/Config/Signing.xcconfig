@@ -1,0 +1,4 @@
+// 서명 설정 — 프로젝트 base configuration.
+// 개인 팀 ID(DEVELOPMENT_TEAM)는 gitignore된 Local.xcconfig에서만 주입한다.
+// Local.xcconfig가 없으면(다른 사람·CI) DEVELOPMENT_TEAM은 비어, 자동 서명만 동작(원본 상태와 동일).
+#include? "Local.xcconfig"
