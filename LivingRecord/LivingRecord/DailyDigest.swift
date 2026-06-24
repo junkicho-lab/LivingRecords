@@ -70,6 +70,7 @@ enum DailyDigest {
         md += "\n**내일 이어볼 질문**\n- \(q)\n"
 
         let d = Digest(kind: .daily, periodStart: start, periodEnd: end, narrative: md, generatedInCloud: false)
+        d.sealedDerived = today.contains { $0.sealed }   // 봉인 원문이 서술 합성에 들어갔으면 봉인/로
         context.insert(d)
         try? context.save()
         try? ObsidianMirrorImpl(store: vault).mirror(d)

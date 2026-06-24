@@ -15,7 +15,7 @@ protocol Embedder {                                 // 임베딩 (S4, NLContextu
 }
 protocol ObsidianMirror {                           // 마크다운 미러 (S3, 단방향, 봉인 제외)
     func mirror(_ capture: Capture) throws
-    func mirror(_ digest: Digest) throws
+    func mirror(_ digest: Digest) throws                 // 봉인 파생(digest.sealedDerived)이면 봉인/로
 }
 protocol IntentionDetector {                        // 의도 감지 (S8): 판정=결정적 어미, 라벨=FM best-effort
     func hasIntention(_ text: String) -> Bool

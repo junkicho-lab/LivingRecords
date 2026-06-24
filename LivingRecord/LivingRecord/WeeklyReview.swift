@@ -422,6 +422,9 @@ enum WeeklyReview {
         }
 
         let d = Digest(kind: .weekly, periodStart: start, periodEnd: now, narrative: md, generatedInCloud: cloud)
+        // 창 안에 봉인 포착이 있으면 카운트·다짐 등 서술에 봉인 파생분이 섞임(클라우드행 증류층은 제외했어도) → 봉인/로.
+        let windowCaps = (try? context.fetch(FetchDescriptor<Capture>())) ?? []
+        d.sealedDerived = windowCaps.contains { $0.sealed && $0.createdAt >= start }
         context.insert(d); try? context.save()
         try? ObsidianMirrorImpl(store: vault).mirror(d)
         return d

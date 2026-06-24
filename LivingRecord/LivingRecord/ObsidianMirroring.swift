@@ -23,16 +23,23 @@ struct ObsidianMirrorImpl: ObsidianMirror {
         store.deleteFile(subdir: subdir, filename: Self.filename(capture))
     }
 
+    // 정리(Digest) 미러. 포착과 달리 한 문서로 합성되므로 쪼갤 수 없어, 봉인 파생분을 한 톨이라도
+    // 품으면(digest.sealedDerived) 정리 전체를 '봉인'으로 본다(과봉인=안전 방향).
     func mirror(_ digest: Digest) throws {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd"
-        let kind: String
-        switch digest.kind { case .daily: kind = "일일"; case .weekly: kind = "주간"; case .period: kind = "기간" }
-        let fm = "---\ntype: digest\nkind: \(digest.kindRaw)\ndate: \(ISO8601DateFormatter().string(from: digest.periodStart))\n---\n\n"
-        store.write(subdir: "Digests",
-                    filename: "\(kind)정리 \(df.string(from: digest.periodStart)).md",
-                    content: fm + digest.narrative + "\n")
+        let sealed = digest.sealedDerived
+        let filename: String
+        switch digest.kind {
+        case .daily:  filename = "일일정리 \(df.string(from: digest.periodStart)).md"
+        case .weekly: filename = "주간정리 \(df.string(from: digest.periodStart)).md"
+        case .period: filename = "기간정리 \(df.string(from: digest.periodStart)).md"
+        case .note:   filename = "메모 \(df.string(from: digest.createdAt)) \(digest.id.uuidString.prefix(4)).md"
+        }
+        let fm = "---\ntype: digest\nkind: \(digest.kindRaw)\nsealed: \(sealed)\ndate: \(ISO8601DateFormatter().string(from: digest.periodStart))\n---\n\n"
+        store.write(subdir: sealed ? "봉인" : "Digests",
+                    filename: filename, content: fm + digest.narrative + "\n")
     }
 
     static func filename(_ c: Capture) -> String {
