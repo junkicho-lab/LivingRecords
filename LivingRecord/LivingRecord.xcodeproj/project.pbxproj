@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		62C3D7982FD19BDA00E7B488 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62C3D7972FD19BDA00E7B488 /* WidgetKit.framework */; };
 		62C3D79A2FD19BDA00E7B488 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62C3D7992FD19BDA00E7B488 /* SwiftUI.framework */; };
+		62C3D7A72FD19BDC00E7B488 /* CaptureWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 62C3D7952FD19BDA00E7B488 /* CaptureWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,6 +29,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				62C3D7A72FD19BDC00E7B488 /* CaptureWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -385,6 +387,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "포착한 생각을 받아쓰기 위해 마이크를 사용합니다.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "음성을 텍스트로 변환하기 위해 사용합니다.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -430,6 +433,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "포착한 생각을 받아쓰기 위해 마이크를 사용합니다.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "음성을 텍스트로 변환하기 위해 사용합니다.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
