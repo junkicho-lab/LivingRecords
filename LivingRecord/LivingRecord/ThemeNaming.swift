@@ -7,7 +7,7 @@ enum ThemeNamer {
     static func name(for text: String) async -> String {
         // FM→MLX 폴백 경유(LocalSynth). 둘 다 막히면 NLTagger 휴리스틱.
         if let r = await LocalSynth.generate(
-            "메모가 다루는 핵심 '소재·분야'를 2~5자 명사 하나로만 답하라. 행위·동작 말고 대상. 문장부호·설명 금지. 예) '수업 회고를 적었다'→'수업', '김치찌개를 먹었다'→'음식'.",
+            "메모가 다루는 핵심 주제를 짧은 명사구(2~10자) 하나로 붙여라. 막연한 한 단어('음식','일','생각')보다 무엇에 관한지 드러나는 구체적 이름을 선호한다. 행위 서술·문장·문장부호·설명 금지. 예) '발표 수업이 잘 됐다'→'발표 수업', '김치찌개를 끓였다'→'김치찌개', '러닝 페이스가 늘었다'→'러닝'.",
             text) {
             let n = clean(r)
             if !n.isEmpty { return n }

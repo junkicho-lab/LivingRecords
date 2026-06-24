@@ -7,7 +7,7 @@ enum Curation {
     static func move(_ captures: [Capture], to target: Theme, context: ModelContext, vault: VaultStore) {
         let sourceNames = Set(captures.compactMap { $0.theme?.name })
         let sourceThemes = captures.compactMap { $0.theme }
-        for c in captures { c.theme = target }
+        for c in captures { c.theme = target; c.userConfirmed = true }   // 사용자 확정 범례(학습 신호)
         cleanup(sourceThemes, except: target, ids: Set(sourceThemes.map { ObjectIdentifier($0) }), context: context)
         try? context.save()
         ObsidianMirrorImpl(store: vault).remirror(captures)   // 주제 링크 갱신
@@ -21,7 +21,7 @@ enum Curation {
         let sourceThemes = captures.compactMap { $0.theme }
         let t = Theme(name: Consolidator.placeholderName(first.text))
         context.insert(t)
-        for c in captures { c.theme = t }
+        for c in captures { c.theme = t; c.userConfirmed = true }   // 사용자 확정 범례(학습 신호)
         cleanup(sourceThemes, except: t, ids: Set(sourceThemes.map { ObjectIdentifier($0) }), context: context)
         try? context.save()
         ObsidianMirrorImpl(store: vault).remirror(captures)   // 주제 링크 갱신

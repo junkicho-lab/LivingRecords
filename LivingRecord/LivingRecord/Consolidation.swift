@@ -8,22 +8,47 @@ enum Consolidator {
     @MainActor private static var tail: Task<Void, Never>?
 
     @MainActor
-    static func enqueue(_ capture: Capture, context: ModelContext, vault: VaultStore) {
+    static func enqueue(_ capture: Capture, context: ModelContext, vault: VaultStore, consent: CloudConsent) {
         let prev = tail
         tail = Task { @MainActor in
             _ = await prev?.value
-            await consolidate(capture, context: context, vault: vault)
+            await consolidate(capture, context: context, vault: vault, consent: consent)
         }
     }
 
     @MainActor
-    static func consolidate(_ capture: Capture, context: ModelContext, vault: VaultStore) async {
-        // 임베딩 저장(향후 활용). 배정 결정엔 사용 안 함.
+    static func consolidate(_ capture: Capture, context: ModelContext, vault: VaultStore, consent: CloudConsent) async {
+        // 임베딩 저장 — 배정 후보를 top-K로 좁히는 데도 쓴다(아래 candidates 순위).
         capture.embedding = EmbedderImpl.shared.embed(capture.text)
         try? context.save()
 
+        // 후보 스냅샷 구성(MainActor): 주제별 임베딩 중심 + 대표 스니펫(봉인 원문은 로컬 FM에도 안 넣음).
         let themes = (try? context.fetch(FetchDescriptor<Theme>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
-        let idx = await ThemeAssigner.assign(capture.text, themeNames: themes.map { $0.name })
+        let center = EmbedderImpl.shared.centeringVector()
+        let candidates: [ThemeCandidate] = themes.enumerated().map { (i, t) in
+            let members = t.captures
+            let centroid = VectorMath.mean(members.compactMap { $0.embedding })   // 봉인 포함(벡터만, 텍스트 아님)
+            let snippets = members.filter { !$0.sealed }
+                .sorted { $0.createdAt > $1.createdAt }
+                .prefix(3).map { snippet($0.text) }
+            let confirmed = members.filter { $0.userConfirmed }.compactMap { $0.embedding }   // 학습 신호
+            return ThemeCandidate(index: i, name: t.name, centroid: centroid,
+                                  snippets: snippets, confirmedEmbeddings: confirmed)
+        }
+        // 배정: 봉인이 아니고 '클라우드 분류'를 옵트인했으면 원문을 Claude로 보내 분류(고품질).
+        // 실패하면 로컬로 폴백. 봉인 포착은 절대 클라우드로 보내지 않는다(항상 로컬).
+        var idx = -2
+        if !capture.sealed, !candidates.isEmpty, consent.canClassifyInCloud, let key = consent.apiKey {
+            let cloudCands = candidates.map { CloudThemeClassifier.Candidate(name: $0.name, snippets: $0.snippets) }
+            if let cloudIdx = await CloudThemeClassifier.classify(memo: capture.text, candidates: cloudCands, apiKey: key) {
+                context.insert(Transmission(kind: "classify", charCount: capture.text.count))   // 전송 로그(투명성)
+                idx = cloudIdx
+            }
+        }
+        if idx == -2 {   // 클라우드 미사용·실패 → 로컬 배정
+            idx = await ThemeAssigner.assign(capture.text, memoEmbedding: capture.embedding,
+                                             candidates: candidates, center: center)
+        }
 
         if idx >= 0 && idx < themes.count {
             capture.theme = themes[idx]               // 기존 주제에 합류
@@ -56,5 +81,11 @@ enum Consolidator {
 
     static func placeholderName(_ text: String) -> String {
         String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(16))
+    }
+
+    // 후보 판단용 짧은 스니펫(한 줄, 60자).
+    private static func snippet(_ t: String) -> String {
+        let s = t.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
+        return s.count > 60 ? String(s.prefix(60)) + "…" : s
     }
 }

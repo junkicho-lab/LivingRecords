@@ -5,6 +5,7 @@ import SwiftData
 struct CaptureView: View {
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
+    @Environment(CloudConsent.self) private var consent     // 클라우드 분류 옵트인 여부
     @Environment(AppLaunchState.self) private var launch    // S12 — 트리거 자동 녹음
     @State private var recorder = AudioRecorder()
     @State private var draft = ""
@@ -197,7 +198,7 @@ struct CaptureView: View {
         let c = Capture(text: text, energy: energy, sealed: sealed)
         context.insert(c)
         try? context.save()
-        Consolidator.enqueue(c, context: context, vault: vault)  // 통합 후 Obsidian 미러(주제 [[링크]] 포함)
+        Consolidator.enqueue(c, context: context, vault: vault, consent: consent)  // 통합 후 Obsidian 미러(주제 [[링크]] 포함)
         showEcho(for: text, excluding: c)
     }
 
