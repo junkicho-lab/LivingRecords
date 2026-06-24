@@ -11,6 +11,8 @@ struct ThemeListView: View {
     @State private var renaming = false
     @State private var mergeSource: Theme?
     @State private var merging = false
+    @State private var rising: Set<UUID> = []    // 이번 주 떠오르는 주제(흐름 신호, onAppear 1회 계산)
+    @State private var cooling: Set<UUID> = []   // 식어가는 주제
 
     var body: some View {
         NavigationStack {
@@ -19,11 +21,7 @@ struct ThemeListView: View {
                     NavigationLink {
                         ThemeDetailView(theme: t)
                     } label: {
-                        HStack {
-                            Text(t.name).lineLimit(1)
-                            Spacer()
-                            Text("\(t.captures.count)").font(.caption).foregroundStyle(.secondary)
-                        }
+                        themeRow(t)
                     }
                     .contextMenu {
                         Button { renameTarget = t; newName = t.name; renaming = true } label: {
@@ -39,6 +37,7 @@ struct ThemeListView: View {
             }
             .navigationTitle("주제")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { loadSignals() }
             .safeAreaInset(edge: .top) {
                 Text("길게 눌러 이름 변경·합치기 · 좌우로 쓸어 탭 이동")
                     .font(.caption2).foregroundStyle(.secondary)
@@ -77,6 +76,51 @@ struct ThemeListView: View {
                 }
             }
         }
+    }
+
+    // 시안: 상태 점 + 이름 + 맥락 한 줄 + 개수 배지.
+    @ViewBuilder
+    private func themeRow(_ t: Theme) -> some View {
+        HStack(spacing: 12) {
+            Circle().fill(stateColor(t)).frame(width: 8, height: 8)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t.name).font(.callout.weight(.medium)).lineLimit(1)
+                Text(contextLine(t)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Text("\(t.captures.count)")
+                .font(.caption).foregroundStyle(.secondary)
+                .padding(.horizontal, 10).padding(.vertical, 2)
+                .background(Color.gray.opacity(0.12), in: Capsule())
+        }
+        .padding(.vertical, 4)
+    }
+
+    // 상태 점: 식어감=회색, 떠오름·활성=초록, 맴돎=주황, 결정됨=회색.
+    private func stateColor(_ t: Theme) -> Color {
+        if cooling.contains(t.id) { return .gray }
+        if rising.contains(t.id) { return .green }
+        switch t.state {
+        case .active:  return .green
+        case .looping: return .orange
+        case .cooling: return .gray
+        case .decided: return .secondary
+        }
+    }
+
+    // 맥락 한 줄: 최근 날짜 + 흐름 신호(떠오르는 중 / 식어감).
+    private func contextLine(_ t: Theme) -> String {
+        guard let last = t.captures.map({ $0.createdAt }).max() else { return "비어 있음" }
+        var s = "최근 \(last.formatted(.dateTime.month().day()))"
+        if rising.contains(t.id) { s += " · 떠오르는 중" }
+        else if cooling.contains(t.id) { s += " · 식어감" }
+        return s
+    }
+
+    private func loadSignals() {
+        rising = Set(WeeklyReview.candidates(context: context, now: .now)
+            .filter { $0.trend == .rising }.map { $0.theme.id })
+        cooling = Set(WeeklyReview.coolingThemes(context: context, now: .now).map { $0.theme.id })
     }
 }
 

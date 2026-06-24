@@ -20,11 +20,15 @@ struct DigestListView: View {
                 NavigationLink {
                     DigestDetailView(digest: d)
                 } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(kindLabel(d.kind)).font(.headline)
-                        Text(d.periodStart, format: .dateTime.year().month().day())
-                            .font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        Image(systemName: kindIcon(d.kind)).font(.title3)
+                            .foregroundStyle(d.kind == .note ? Color.secondary : Color.blue).frame(width: 26)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(kindLabel(d.kind)).font(.callout.weight(.medium))
+                            Text(subtitle(d)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
                     }
+                    .padding(.vertical, 4)
                 }
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) { deleteDigest(d) } label: { Label("삭제", systemImage: "trash") }
@@ -99,6 +103,37 @@ struct DigestListView: View {
 
     private func kindLabel(_ k: DigestKind) -> String {
         switch k { case .daily: "일일 정리"; case .weekly: "주간 정리"; case .period: "기간 정리"; case .note: "내 생각" }
+    }
+    private func kindIcon(_ k: DigestKind) -> String {
+        switch k {
+        case .daily:  "calendar"
+        case .weekly: "calendar.badge.clock"
+        case .period: "calendar.badge.exclamationmark"
+        case .note:   "square.and.pencil"
+        }
+    }
+
+    // 날짜(기간형은 범위) + 서술 첫 줄 미리보기.
+    private func subtitle(_ d: Digest) -> String {
+        let date: String
+        switch d.kind {
+        case .weekly, .period:
+            date = "\(d.periodStart.formatted(.dateTime.month().day())) ~ \(d.periodEnd.formatted(.dateTime.month().day()))"
+        case .daily, .note:
+            date = d.periodStart.formatted(.dateTime.month().day())
+        }
+        let p = preview(d.narrative)
+        return p.isEmpty ? date : "\(date) · \(p)"
+    }
+    // 마크다운 제목·표식·빈 줄을 건너뛴 첫 '내용' 줄.
+    private func preview(_ narrative: String) -> String {
+        for raw in narrative.components(separatedBy: "\n") {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty || line.hasPrefix("#") || line.hasPrefix("**")
+                || line.hasPrefix("-") || line.hasPrefix("☁️") || line.hasPrefix("_") { continue }
+            return line
+        }
+        return ""
     }
 }
 

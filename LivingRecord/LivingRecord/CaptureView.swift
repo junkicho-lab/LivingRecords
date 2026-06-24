@@ -20,16 +20,22 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
         VStack(spacing: 20) {
-            // 봉인 토글
-            Button { sealNext.toggle() } label: {
-                Label(sealNext ? "봉인 모드 — 이 기록은 기기 밖으로 안 나가요" : "봉인",
-                      systemImage: sealNext ? "lock.fill" : "lock.open")
-                    .font(.subheadline)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(sealNext ? Color.purple.opacity(0.15) : Color.gray.opacity(0.12),
-                                in: Capsule())
-                    .foregroundStyle(sealNext ? .purple : .secondary)
+            // 봉인 토글 — 칩은 콤팩트하게 고정, 설명은 켤 때만 캡션으로(레이아웃 흔들림 제거)
+            VStack(spacing: 4) {
+                Button { sealNext.toggle() } label: {
+                    Label("봉인", systemImage: sealNext ? "lock.fill" : "lock.open")
+                        .font(.subheadline)
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(sealNext ? Color.purple.opacity(0.15) : Color.gray.opacity(0.12),
+                                    in: Capsule())
+                        .foregroundStyle(sealNext ? .purple : .secondary)
+                }
+                if sealNext {
+                    Text("이 기록은 기기 밖으로 안 나가요")
+                        .font(.caption2).foregroundStyle(.purple).transition(.opacity)
+                }
             }
+            .animation(.easeInOut(duration: 0.2), value: sealNext)
             .padding(.top, 8)
 
             Spacer()
@@ -94,8 +100,8 @@ struct CaptureView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Color.blue.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .padding(12)
+                .background(Color.blue.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal)
                 .onTapGesture { withAnimation { echoes = [] } }
                 .transition(.opacity)

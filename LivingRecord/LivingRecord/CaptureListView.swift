@@ -127,27 +127,27 @@ struct CaptureListView: View {
 
     @ViewBuilder
     private func row(_ c: Capture) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .top, spacing: 6) {
                 if c.sealed {
-                    Image(systemName: "lock.fill").font(.caption).foregroundStyle(.purple)
+                    Image(systemName: "lock.fill").font(.caption).foregroundStyle(.purple).padding(.top, 2)
                 }
-                Text(c.text)
+                Text(c.text).lineLimit(3)
             }
-            HStack(spacing: 10) {
-                Text(c.createdAt, format: .dateTime.month().day().hour().minute())
+            HStack(spacing: 8) {
+                Text(c.createdAt, format: .dateTime.month().day())
                     .font(.caption).foregroundStyle(.secondary)
                 if let e = c.energy { energyBar(e) }
                 if let name = c.theme?.name {
                     Text(name)
                         .font(.caption2)
-                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
                         .background(Color.gray.opacity(0.15), in: Capsule())
                         .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
         .contextMenu {
             Button { editTarget = c; editText = c.text } label: {
                 Label("내용 수정", systemImage: "square.and.pencil")
@@ -183,15 +183,12 @@ struct CaptureListView: View {
         }
     }
 
+    // 에너지 — 시안대로 작은 앰버 바 하나(은근하게, 숫자 강조 안 함).
     @ViewBuilder
     private func energyBar(_ e: Double) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: "waveform").font(.caption2)
-            Capsule().fill(Color.orange.opacity(0.25)).frame(width: 44, height: 4)
-                .overlay(alignment: .leading) {
-                    Capsule().fill(.orange).frame(width: 44 * e, height: 4)
-                }
-        }
-        .foregroundStyle(.orange)
+        Capsule().fill(Color.orange.opacity(0.25)).frame(width: 28, height: 4)
+            .overlay(alignment: .leading) {
+                Capsule().fill(.orange).frame(width: 28 * e, height: 4)
+            }
     }
 }
