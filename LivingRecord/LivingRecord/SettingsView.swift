@@ -49,7 +49,7 @@ struct ObsidianSettingsView: View {
                 }
                 Button(vault.vaultURL == nil ? "볼트 폴더 선택" : "볼트 폴더 변경") { picking = true }
             } footer: {
-                Text("포착·정리가 이 폴더에 마크다운으로 단방향 미러됩니다(Captures/·봉인/·Digests/). 봉인은 '봉인' 폴더로 따로 저장돼요(클라우드 종합엔 제외). 볼트가 iCloud 동기화되면 봉인도 기기를 떠나니 유의하세요.")
+                Text("포착·정리가 이 폴더에 마크다운으로 단방향 미러됩니다(Captures/·봉인/·Digests/). 봉인은 '봉인' 폴더로 따로 저장돼요(클라우드 종합엔 제외). 봉인 포착이 섞인 일일·주간 정리도 '봉인' 폴더로 갑니다. 볼트가 iCloud 동기화되면 봉인도 기기를 떠나니 유의하세요.")
             }
             if vault.vaultURL != nil {
                 Section {
@@ -108,6 +108,12 @@ struct CloudSettingsView: View {
                 }
             } footer: {
                 Text("켜면 주간·기간 정리를 Claude로 더 깊게 종합합니다. 원문이 아니라 로컬에서 요약한 '증류층'만 전송하고, 봉인된 포착은 제외됩니다. 끄면 모두 로컬로 동작.")
+            }
+            Section {
+                Toggle("포착을 클라우드로 분류", isOn: Binding(get: { cloud.classifyEnabled }, set: { cloud.classifyEnabled = $0 }))
+                    .disabled(!cloud.hasAPIKey)
+            } footer: {
+                Text("⚠️ 켜면 새 포착의 \(Text("원문").bold())과 비교용으로 기존 주제의 대표 기록 일부(스니펫)를 함께 Claude로 보내 더 정확히 분류합니다. 위 '깊은 종합'(증류층만 전송)보다 강한 단계예요. \(Text("봉인 포착은 보내지 않으며").bold())(스니펫에도 포함 안 됨) 항상 기기에서만 분류됩니다. 끄면 분류는 모두 로컬(온디바이스)로 동작. 전송할 때마다 아래 '전송 기록'에 남습니다.")
             }
             if !transmissions.isEmpty {
                 Section("전송 기록") {

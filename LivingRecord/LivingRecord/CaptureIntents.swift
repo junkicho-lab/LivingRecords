@@ -13,6 +13,8 @@ final class AppLaunchState {
     var startSealed = false       // 봉인 포착 여부
     var openCapture = false       // 포착 탭으로 이동만(리마인더 탭 → 녹음 안 함) — S13
     var openInsights = false      // 흐름 탭으로(되새김 알림 탭)
+    var pendingDecisionThemeID: String?   // 저녁 결정 드립 → 결정 카드(대상 주제 ID)
+    var pendingDecisionQuestion: String?  // 카드에 보일 거울형 질문
     private init() {}
 }
 

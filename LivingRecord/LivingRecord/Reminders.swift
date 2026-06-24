@@ -60,6 +60,9 @@ final class ReminderStore {
         let center = UNUserNotificationCenter.current()
         cancelAll()
         let cal = Calendar.current
+        // 무르익은 결정 하나(소멸 다짐 > 식어가는 줄기). 가장 가까운 날에만 싣는다(나머지는 되살아남). 결정 > 기억.
+        let decision = EveningPrompt.ripeDecision(context: context, now: .now)
+        var decisionUsed = false
         for offset in 0..<Self.horizon {
             guard let day = cal.date(byAdding: .day, value: offset, to: cal.startOfDay(for: .now)) else { continue }
             var comps = cal.dateComponents([.year, .month, .day], from: day)
@@ -69,7 +72,12 @@ final class ReminderStore {
             let content = UNMutableNotificationContent()
             content.sound = .default
             let noon = cal.date(byAdding: .hour, value: 12, to: day) ?? day
-            if let m = Resurfacer.daily(context: context, now: noon) {
+            if !decisionUsed, let d = decision {
+                content.title = "잠깐, 놓아줄까요?"
+                content.body = d.question
+                content.userInfo = ["dest": "decision", "themeID": d.themeID.uuidString, "q": d.question]
+                decisionUsed = true
+            } else if let m = Resurfacer.daily(context: context, now: noon) {
                 content.title = "오늘의 되새김"
                 content.body = "\(m.reason) — \(snippet(m.capture.text))"
                 content.userInfo = ["dest": "insights"]
@@ -99,10 +107,16 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     }
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
-        let dest = response.notification.request.content.userInfo["dest"] as? String
+        let info = response.notification.request.content.userInfo
+        let dest = info["dest"] as? String
         await MainActor.run {
-            if dest == "insights" { AppLaunchState.shared.openInsights = true }
-            else { AppLaunchState.shared.openCapture = true }
+            switch dest {
+            case "decision":
+                AppLaunchState.shared.pendingDecisionThemeID = info["themeID"] as? String
+                AppLaunchState.shared.pendingDecisionQuestion = info["q"] as? String
+            case "insights": AppLaunchState.shared.openInsights = true
+            default:         AppLaunchState.shared.openCapture = true
+            }
         }
     }
 }

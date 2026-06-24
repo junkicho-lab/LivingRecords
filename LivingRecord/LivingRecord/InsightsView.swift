@@ -10,6 +10,8 @@ struct InsightsView: View {
     @Query private var themes: [Theme]
 
     @State private var memory: Resurfacer.Memory?
+    @State private var rising: [String] = []     // 떠오르는 주제(이번 주)
+    @State private var cooling: [String] = []    // 식어가는 주제
     private let cal = Calendar.current
     private let windowDays = 14
 
@@ -18,6 +20,12 @@ struct InsightsView: View {
         return (0..<windowDays).reversed().compactMap { cal.date(byAdding: .day, value: -$0, to: today) }
     }
     private func sameDay(_ a: Date, _ b: Date) -> Bool { cal.isDate(a, inSameDayAs: b) }
+
+    // 이번 주(최근 7일) vs 지난 주 — 방향 비교용 창.
+    private var weekStart: Date { cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: .now)) ?? .now }
+    private var prevStart: Date { cal.date(byAdding: .day, value: -13, to: cal.startOfDay(for: .now)) ?? .now }
+    private var thisWeek: [Capture] { captures.filter { $0.createdAt >= weekStart } }
+    private var prevWeek: [Capture] { captures.filter { $0.createdAt >= prevStart && $0.createdAt < weekStart } }
 
     var body: some View {
         NavigationStack {
@@ -28,8 +36,10 @@ struct InsightsView: View {
                         .padding(.top, 80)
                 } else {
                     VStack(spacing: 24) {
+                        headline            // ① 한 줄 결론
+                        directionalStats    // ② 이번 주 vs 지난 주
+                        flowBoard           // ③ 떠오름 / 식어감
                         if let m = memory { resurfaced(m) }
-                        summary
                         throughlines
                         dailyCounts
                         energyTrend
@@ -40,7 +50,7 @@ struct InsightsView: View {
             }
             .navigationTitle("흐름")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { memory = Resurfacer.daily(context: context) }
+            .onAppear { loadFlow() }
         }
     }
 
@@ -63,37 +73,138 @@ struct InsightsView: View {
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
     }
 
-    // 요약 카드들
-    private var summary: some View {
-        let withE = captures.compactMap { $0.energy }
-        let avgE = withE.isEmpty ? nil : withE.reduce(0, +) / Double(withE.count)
-        let sealed = captures.filter { $0.sealed }.count
-        return HStack(spacing: 10) {
-            stat("\(captures.count)", "포착")
-            stat("\(themes.filter { !$0.captures.isEmpty }.count)", "주제")
-            stat(avgE.map { String(format: "%.0f%%", $0 * 100) } ?? "—", "평균 에너지")
-            stat("\(sealed)", "봉인")
+    private func loadFlow() {
+        memory = Resurfacer.daily(context: context)
+        let cands = WeeklyReview.candidates(context: context, now: .now)
+        rising = cands.filter { $0.trend == .rising }.prefix(4).map { $0.theme.name }
+        cooling = WeeklyReview.coolingThemes(context: context, now: .now).prefix(4).map { $0.theme.name }
+    }
+
+    // ① 헤드라인 — 결정적 한 줄(LLM 없음). 담담한 관찰자체.
+    private var headline: some View {
+        var s = "이번 주 \(thisWeek.count)회"
+        let lc = prevWeek.count
+        if lc > 0 {
+            s += thisWeek.count > lc ? " — 지난 주(\(lc))보다 늘었다." :
+                 (thisWeek.count < lc ? " — 지난 주(\(lc))보다 줄었다." : " — 지난 주와 비슷하다.")
+        } else { s += " 기록되는 중이다." }
+        if let top = topTheme(thisWeek) { s += " ‘\(top)’이 가장 자주 나왔다." }
+        if let d = energyDelta { s += d > 0.03 ? " 에너지는 오르는 중이다." : (d < -0.03 ? " 에너지는 내리는 중이다." : "") }
+        return Text(s).font(.callout)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    // ② 방향 있는 스탯 — 이번 주 vs 지난 주(↑/↓). 누적 합계가 아니라 변화.
+    private var directionalStats: some View {
+        HStack(spacing: 10) {
+            dstat("\(thisWeek.count)", "이번 주 포착", trend(Double(thisWeek.count), Double(prevWeek.count)))
+            dstat("\(activeThemes(thisWeek))", "활성 주제", trend(Double(activeThemes(thisWeek)), Double(activeThemes(prevWeek))))
+            dstat(energyLabel(avgEnergy(thisWeek)), "에너지", energyDelta.map { trendFromDelta($0, 0.03) })
+            dstat(focusText(thisWeek), "집중도", focusTrend)
         }
     }
-    private func stat(_ value: String, _ label: String) -> some View {
+    private func dstat(_ value: String, _ label: String, _ t: FlowTrend?) -> some View {
         VStack(spacing: 4) {
-            Text(value).font(.title3.bold())
+            HStack(spacing: 2) {
+                Text(value).font(.title3.bold())
+                if let t, t != .flat { Image(systemName: t.icon).font(.caption2.bold()).foregroundStyle(.blue) }
+            }
             Text(label).font(.caption2).foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity).padding(.vertical, 10)
         .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
     }
 
-    // 일별 포착 수
+    // ③ 떠오름 / 식어감 — 주간 안 열어도 '이어갈지/놓을지'가 한눈에.
+    @ViewBuilder
+    private var flowBoard: some View {
+        if !rising.isEmpty || !cooling.isEmpty {
+            card("지금 흐름") {
+                HStack(alignment: .top, spacing: 14) {
+                    flowGroup("떠오름", rising, .green, "arrow.up.right")
+                    Divider()
+                    flowGroup("식어감", cooling, .gray, "arrow.down.right")
+                }
+            }
+        }
+    }
+    private func flowGroup(_ title: String, _ names: [String], _ color: Color, _ icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(title, systemImage: icon).font(.caption.weight(.medium)).foregroundStyle(color)
+            if names.isEmpty {
+                Text("—").font(.caption2).foregroundStyle(.secondary)
+            } else {
+                ForEach(names, id: \.self) { n in
+                    Text(n).font(.caption).lineLimit(1)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(color.opacity(0.12), in: Capsule())
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: 글랜스 계산(결정적·온디바이스)
+    private enum FlowTrend { case up, down, flat
+        var icon: String { self == .down ? "arrow.down" : "arrow.up" }
+    }
+    private func trend(_ now: Double, _ prev: Double) -> FlowTrend? {
+        guard prev > 0 else { return nil }   // 비교 기준 없으면 화살표 생략
+        let d = now - prev, eps = max(0.5, prev * 0.05)
+        return d > eps ? .up : (d < -eps ? .down : .flat)
+    }
+    private func trendFromDelta(_ d: Double, _ eps: Double) -> FlowTrend { d > eps ? .up : (d < -eps ? .down : .flat) }
+    private func avgEnergy(_ caps: [Capture]) -> Double? {
+        let es = caps.compactMap { $0.energy }; return es.isEmpty ? nil : es.reduce(0,+)/Double(es.count)
+    }
+    private var energyDelta: Double? {
+        guard let t = avgEnergy(thisWeek), let p = avgEnergy(prevWeek) else { return nil }
+        return t - p
+    }
+    private func energyLabel(_ e: Double?) -> String {
+        guard let e else { return "—" }
+        return e < 0.4 ? "차분" : (e < 0.7 ? "중간" : "들뜸")
+    }
+    private func activeThemes(_ caps: [Capture]) -> Int { Set(caps.compactMap { $0.theme?.name }).count }
+    private func topTheme(_ caps: [Capture]) -> String? {
+        var c: [String: Int] = [:]; for x in caps { if let n = x.theme?.name { c[n, default: 0] += 1 } }
+        return c.max { $0.value < $1.value }?.key
+    }
+    // 집중도 = 상위 3개 주제가 차지하는 비중(높을수록 포커스됨).
+    private func focusRatio(_ caps: [Capture]) -> Double? {
+        let wt = caps.filter { $0.theme != nil }; guard !wt.isEmpty else { return nil }
+        var c: [String: Int] = [:]; for x in wt { c[x.theme!.name, default: 0] += 1 }
+        let top3 = c.values.sorted(by: >).prefix(3).reduce(0, +)
+        return Double(top3) / Double(wt.count)
+    }
+    private func focusText(_ caps: [Capture]) -> String { focusRatio(caps).map { "\(Int($0 * 100))%" } ?? "—" }
+    private var focusTrend: FlowTrend? {
+        guard let t = focusRatio(thisWeek), let p = focusRatio(prevWeek) else { return nil }
+        return trendFromDelta(t - p, 0.05)
+    }
+
+    // 일별 포착 수 — 오늘 막대 강조 + 7일 평균선(내 평소 대비 위/아래가 한눈에).
     private var dailyCounts: some View {
         let data = days.map { d in (day: d, count: captures.filter { sameDay($0.createdAt, d) }.count) }
+        let recent7 = data.suffix(7).map { $0.count }
+        let avg7 = recent7.isEmpty ? 0 : Double(recent7.reduce(0, +)) / Double(recent7.count)
         return card("최근 \(windowDays)일 포착") {
-            Chart(data, id: \.day) { e in
-                BarMark(x: .value("날", e.day, unit: .day), y: .value("포착", e.count))
-                    .foregroundStyle(.blue)
+            Chart {
+                ForEach(data, id: \.day) { e in
+                    BarMark(x: .value("날", e.day, unit: .day), y: .value("포착", e.count))
+                        .foregroundStyle(cal.isDateInToday(e.day) ? Color.blue : Color.blue.opacity(0.3))
+                }
+                RuleMark(y: .value("7일 평균", avg7))
+                    .foregroundStyle(.secondary)
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .annotation(position: .top, alignment: .leading) {
+                        Text("7일 평균 \(String(format: "%.1f", avg7))")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
             }
-            .chartXAxis { AxisMarks(values: .stride(by: .day, count: 3)) { v in
+            .chartXAxis { AxisMarks(values: .stride(by: .day, count: 3)) { _ in
                 AxisValueLabel(format: .dateTime.month(.defaultDigits).day())
             } }
             .frame(height: 150)
@@ -117,6 +228,16 @@ struct InsightsView: View {
                         .foregroundStyle(.orange)
                 }
                 .chartYScale(domain: 0...1)
+                .chartYAxis {   // 0~1 숫자 대신 차분↔들뜸으로 앵커
+                    AxisMarks(values: [0.2, 0.8]) { v in
+                        AxisGridLine()
+                        AxisValueLabel {
+                            if let d = v.as(Double.self) {
+                                Text(d < 0.5 ? "차분" : "들뜸").font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
                 .frame(height: 150)
             }
         }

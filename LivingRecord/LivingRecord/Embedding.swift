@@ -1,6 +1,29 @@
 import Foundation
 import NaturalLanguage
 
+// 벡터 보조 — 중심(평균)과 중심화 코사인. 주제 배정 후보 순위에 쓰임(WeeklyReview는 자체 사본 유지).
+enum VectorMath {
+    static func mean(_ vs: [[Double]]) -> [Double]? {
+        guard let first = vs.first else { return nil }
+        var s = [Double](repeating: 0, count: first.count); var n = 0
+        for v in vs where v.count == first.count { for i in 0..<v.count { s[i] += v[i] }; n += 1 }
+        guard n > 0 else { return nil }
+        for i in 0..<s.count { s[i] /= Double(n) }   // 유효 벡터 수로 나눔
+        return s
+    }
+    // 고정 중심을 빼고(anisotropy 보정) 코사인. 차원 불일치 시 -1.
+    static func cosCentered(_ a: [Double], _ b: [Double], center: [Double]?) -> Double {
+        guard a.count == b.count else { return -1 }
+        func cn(_ v: [Double]) -> [Double] {
+            let c = (center?.count == v.count) ? zip(v, center!).map(-) : v
+            let m = c.reduce(0) { $0 + $1 * $1 }.squareRoot() + 1e-9
+            return c.map { $0 / m }
+        }
+        let x = cn(a), y = cn(b)
+        return zip(x, y).reduce(0) { $0 + $1.0 * $1.1 }
+    }
+}
+
 // S4 — 한국어 contextual 임베딩(평균 풀링). 중심화는 통합 시점에 적용(전역 centroid 동적).
 final class EmbedderImpl: Embedder {
     static let shared = EmbedderImpl()

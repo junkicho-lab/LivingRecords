@@ -11,6 +11,9 @@ struct CaptureListView: View {
     @State private var query = ""
     @State private var semanticHits: [Capture] = []
     @State private var range = DateRange()
+    @State private var editTarget: Capture?     // 내용 수정 대상(음성 오탈자 교정)
+    @State private var editText = ""
+    @State private var pendingDelete: Capture?  // 삭제 확인 대상
 
     private var trimmed: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var browse: [Capture] { captures.filter { range.contains($0.createdAt) } }   // 기간 필터(검색 아닐 때)
@@ -73,7 +76,48 @@ struct CaptureListView: View {
                                            description: Text("리턴을 눌러 비슷한 뜻으로도 찾아볼 수 있어요."))
                 }
             }
+            .sheet(item: $editTarget) { c in
+                NavigationStack {
+                    Form {
+                        Section {
+                            TextField("내용", text: $editText, axis: .vertical)
+                                .lineLimit(3...14)
+                        } footer: {
+                            Text("음성 인식 오탈자를 고칠 수 있어요. 저장하면 검색·미러도 함께 갱신됩니다. (주제는 그대로 유지)")
+                        }
+                    }
+                    .navigationTitle("내용 수정")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("취소") { editTarget = nil } }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("저장") { saveEdit(c) }
+                                .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+            .confirmationDialog("이 기록을 삭제할까요?",
+                                isPresented: Binding(get: { pendingDelete != nil },
+                                                     set: { if !$0 { pendingDelete = nil } }),
+                                titleVisibility: .visible, presenting: pendingDelete) { c in
+                Button("삭제", role: .destructive) { deleteCapture(c) }
+                Button("취소", role: .cancel) {}
+            }
         }
+    }
+
+    // 원문 수정(오탈자 교정). 텍스트만 바꾸고 주제는 유지. 임베딩·미러·허브 스니펫을 갱신.
+    private func saveEdit(_ c: Capture) {
+        let t = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+        editTarget = nil
+        guard !t.isEmpty, t != c.text else { return }
+        c.text = t
+        c.embedding = EmbedderImpl.shared.embed(t)   // 텍스트 바뀌면 임베딩도 갱신(검색·메아리 일관)
+        try? context.save()
+        ObsidianMirrorImpl(store: vault).remirror([c])                  // 미러 .md 갱신(봉인 폴더 포함)
+        if let theme = c.theme { WikiBuilder.updateTheme(theme, context: context, vault: vault) }   // 허브 스니펫 갱신
     }
 
     // 검색 실행 시에만 의미 검색(매 타자마다 임베딩하지 않음).
@@ -83,28 +127,34 @@ struct CaptureListView: View {
 
     @ViewBuilder
     private func row(_ c: Capture) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .top, spacing: 6) {
                 if c.sealed {
-                    Image(systemName: "lock.fill").font(.caption).foregroundStyle(.purple)
+                    Image(systemName: "lock.fill").font(.caption).foregroundStyle(.purple).padding(.top, 2)
                 }
-                Text(c.text)
+                Text(c.text).lineLimit(3)
             }
-            HStack(spacing: 10) {
-                Text(c.createdAt, format: .dateTime.month().day().hour().minute())
+            HStack(spacing: 8) {
+                Text(c.createdAt, format: .dateTime.month().day())
                     .font(.caption).foregroundStyle(.secondary)
                 if let e = c.energy { energyBar(e) }
                 if let name = c.theme?.name {
                     Text(name)
                         .font(.caption2)
-                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
                         .background(Color.gray.opacity(0.15), in: Capsule())
                         .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
         .contextMenu {
+            Button { editTarget = c; editText = c.text } label: {
+                Label("내용 수정", systemImage: "square.and.pencil")
+            }
+            Button(role: .destructive) { pendingDelete = c } label: {
+                Label("기록 삭제", systemImage: "trash")
+            }
             Section("다른 주제로 옮기기") {
                 ForEach(themes.filter { $0.id != c.theme?.id }) { t in
                     Button(t.name) { Curation.move([c], to: t, context: context, vault: vault) }
@@ -113,29 +163,33 @@ struct CaptureListView: View {
                     Label("새 주제로 추출", systemImage: "plus.circle")
                 }
             }
-            Button(role: .destructive) { deleteCapture(c) } label: {
-                Label("기록 삭제", systemImage: "trash")
-            }
         }
     }
 
     private func deleteCapture(_ c: Capture) {
-        let theme = c.theme
+        let host = c.theme
+        semanticHits.removeAll { $0.id == c.id }            // 캐시된 '비슷한 기록'에서도 제거(삭제분 잔존 방지)
         ObsidianMirrorImpl(store: vault).delete(c)          // 미러 .md 제거
         context.delete(c)
-        if let theme, theme.captures.isEmpty { context.delete(theme) }   // 빈 주제 정리
         try? context.save()
+        if let host {
+            if host.captures.isEmpty {                      // 빈 주제 정리 + 허브 삭제
+                let name = host.name
+                context.delete(host); try? context.save()
+                WikiBuilder.deleteTheme(named: name, vault: vault)
+            } else {
+                WikiBuilder.updateTheme(host, context: context, vault: vault)   // 허브에서 그 줄 제거
+            }
+            WikiBuilder.updateIndex(context: context, vault: vault)
+        }
     }
 
+    // 에너지 — 시안대로 작은 앰버 바 하나(은근하게, 숫자 강조 안 함).
     @ViewBuilder
     private func energyBar(_ e: Double) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: "waveform").font(.caption2)
-            Capsule().fill(Color.orange.opacity(0.25)).frame(width: 44, height: 4)
-                .overlay(alignment: .leading) {
-                    Capsule().fill(.orange).frame(width: 44 * e, height: 4)
-                }
-        }
-        .foregroundStyle(.orange)
+        Capsule().fill(Color.orange.opacity(0.25)).frame(width: 28, height: 4)
+            .overlay(alignment: .leading) {
+                Capsule().fill(.orange).frame(width: 28 * e, height: 4)
+            }
     }
 }
