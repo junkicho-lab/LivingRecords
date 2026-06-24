@@ -22,7 +22,12 @@ final class CloudConsent {
     var apiKey: String? { Keychain.get(account) }
     func setAPIKey(_ k: String) {
         let t = k.trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.isEmpty { Keychain.delete(account) } else { Keychain.set(t, account: account) }
+        if t.isEmpty {
+            Keychain.delete(account)
+            classifyEnabled = false   // 키 삭제 시 원문 분류 동의도 해제 — 새 키 저장만으로 재개되지 않도록
+        } else {
+            Keychain.set(t, account: account)
+        }
     }
     /// 클라우드 전송 가능 조건(증류층): 토글 ON + 키 존재.
     var canSendToCloud: Bool { enabled && hasAPIKey }

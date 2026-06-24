@@ -58,7 +58,7 @@ enum PeriodReview {
         if !periodDecisions.isEmpty {
             md += "\n**내린 결정과 그 이후**\n"
             for d in periodDecisions.prefix(3) {
-                let after = d.theme?.captures.filter { $0.createdAt > d.createdAt }.count ?? 0
+                let after = d.theme?.captures.filter { !$0.sealed && $0.createdAt > d.createdAt }.count ?? 0   // 봉인 제외(비봉인 Digests 경로로 새어나가지 않게)
                 let mark: String   // 결정 이후 그 주제가 어떻게 됐나(누적 피드백)
                 switch d.verdict {
                 case .sustain: mark = after > 0 ? " — 이어짐 ✓" : " — 조용해짐"

@@ -168,6 +168,7 @@ struct CaptureListView: View {
 
     private func deleteCapture(_ c: Capture) {
         let host = c.theme
+        semanticHits.removeAll { $0.id == c.id }            // 캐시된 '비슷한 기록'에서도 제거(삭제분 잔존 방지)
         ObsidianMirrorImpl(store: vault).delete(c)          // 미러 .md 제거
         context.delete(c)
         try? context.save()

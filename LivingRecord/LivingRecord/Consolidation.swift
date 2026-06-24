@@ -9,15 +9,17 @@ enum Consolidator {
 
     @MainActor
     static func enqueue(_ capture: Capture, context: ModelContext, vault: VaultStore, consent: CloudConsent) {
+        // 저장 시점의 분류 동의를 '스냅샷'으로 박제 — 큐 대기 중 사용자가 토글을 켜도 이 포착은 올라가지 않는다.
+        let classifyAllowed = consent.canClassifyInCloud
         let prev = tail
         tail = Task { @MainActor in
             _ = await prev?.value
-            await consolidate(capture, context: context, vault: vault, consent: consent)
+            await consolidate(capture, context: context, vault: vault, consent: consent, classifyAllowed: classifyAllowed)
         }
     }
 
     @MainActor
-    static func consolidate(_ capture: Capture, context: ModelContext, vault: VaultStore, consent: CloudConsent) async {
+    static func consolidate(_ capture: Capture, context: ModelContext, vault: VaultStore, consent: CloudConsent, classifyAllowed: Bool) async {
         // 임베딩 저장 — 배정 후보를 top-K로 좁히는 데도 쓴다(아래 candidates 순위).
         capture.embedding = EmbedderImpl.shared.embed(capture.text)
         try? context.save()
@@ -38,10 +40,10 @@ enum Consolidator {
         // 배정: 봉인이 아니고 '클라우드 분류'를 옵트인했으면 원문을 Claude로 보내 분류(고품질).
         // 실패하면 로컬로 폴백. 봉인 포착은 절대 클라우드로 보내지 않는다(항상 로컬).
         var idx = -2
-        if !capture.sealed, !candidates.isEmpty, consent.canClassifyInCloud, let key = consent.apiKey {
+        if !capture.sealed, classifyAllowed, !candidates.isEmpty, consent.canClassifyInCloud, let key = consent.apiKey {
+            context.insert(Transmission(kind: "classify", charCount: capture.text.count))   // 전송 '시도' 로그(투명성) — 비200·거부·파싱실패라도 원문은 이미 나갔으므로 먼저 남긴다
             let cloudCands = candidates.map { CloudThemeClassifier.Candidate(name: $0.name, snippets: $0.snippets) }
             if let cloudIdx = await CloudThemeClassifier.classify(memo: capture.text, candidates: cloudCands, apiKey: key) {
-                context.insert(Transmission(kind: "classify", charCount: capture.text.count))   // 전송 로그(투명성)
                 idx = cloudIdx
             }
         }

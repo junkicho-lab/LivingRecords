@@ -113,7 +113,7 @@ struct CloudSettingsView: View {
                 Toggle("포착을 클라우드로 분류", isOn: Binding(get: { cloud.classifyEnabled }, set: { cloud.classifyEnabled = $0 }))
                     .disabled(!cloud.hasAPIKey)
             } footer: {
-                Text("⚠️ 켜면 새 포착의 \(Text("원문").bold())을 Claude로 보내 더 정확히 주제 분류합니다. 위 '깊은 종합'(증류층만 전송)보다 강한 단계예요. \(Text("봉인 포착은 보내지 않으며").bold()) 항상 기기에서만 분류됩니다. 끄면 분류는 모두 로컬(온디바이스)로 동작. 전송할 때마다 아래 '전송 기록'에 남습니다.")
+                Text("⚠️ 켜면 새 포착의 \(Text("원문").bold())과 비교용으로 기존 주제의 대표 기록 일부(스니펫)를 함께 Claude로 보내 더 정확히 분류합니다. 위 '깊은 종합'(증류층만 전송)보다 강한 단계예요. \(Text("봉인 포착은 보내지 않으며").bold())(스니펫에도 포함 안 됨) 항상 기기에서만 분류됩니다. 끄면 분류는 모두 로컬(온디바이스)로 동작. 전송할 때마다 아래 '전송 기록'에 남습니다.")
             }
             if !transmissions.isEmpty {
                 Section("전송 기록") {

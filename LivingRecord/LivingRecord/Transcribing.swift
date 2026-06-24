@@ -44,9 +44,11 @@ struct SpeechTranscriberImpl: Transcriber {
             do {
                 _ = try await AssetInventory.reserve(locale: locale)
                 return
+            } catch is CancellationError {
+                throw CancellationError()          // 취소는 재시도하지 않고 즉시 전파
             } catch {
                 if attempt == 2 { throw error }
-                try? await Task.sleep(for: .milliseconds(500))
+                try await Task.sleep(for: .milliseconds(500))   // 백오프 중 취소도 그대로 전파
             }
         }
     }

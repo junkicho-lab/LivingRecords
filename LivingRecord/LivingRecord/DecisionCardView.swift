@@ -7,6 +7,7 @@ struct DecisionCardView: View {
     let themeID: UUID
     let question: String
     let onDone: () -> Void
+    @State private var isSubmitting = false   // 빠른 더블탭으로 Decision 중복 삽입 방지
     @Environment(\.modelContext) private var context
     @Environment(VaultStore.self) private var vault
 
@@ -25,12 +26,19 @@ struct DecisionCardView: View {
                     Label("놓기", systemImage: "wind").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(isSubmitting)
                 Button { act(.sustain) } label: {
                     Label("아직 이어가기", systemImage: "flame").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                Button("나중에") { EveningPrompt.snooze(themeID); onDone() }
+                .disabled(isSubmitting)
+                Button("나중에") {
+                    guard !isSubmitting else { return }
+                    isSubmitting = true
+                    EveningPrompt.snooze(themeID); onDone()
+                }
                     .font(.subheadline).foregroundStyle(.secondary).padding(.top, 4)
+                    .disabled(isSubmitting)
             }
             .padding(.horizontal)
         }
@@ -39,6 +47,8 @@ struct DecisionCardView: View {
     }
 
     private func act(_ verdict: Verdict) {
+        guard !isSubmitting else { return }
+        isSubmitting = true
         if let theme = fetchTheme() {
             WeeklyReview.decide(theme, verdict, context: context)
             WikiBuilder.updateTheme(theme, context: context, vault: vault)   // 허브 결정 반영

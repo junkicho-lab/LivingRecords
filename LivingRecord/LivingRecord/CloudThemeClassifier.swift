@@ -47,14 +47,16 @@ enum CloudThemeClassifier {
         } catch { return nil }
     }
 
-    // {"match": n} 우선, 실패 시 본문 첫 정수. 범위 밖이면 -1(새 주제).
+    // {"match": n} 우선, 실패 시 본문 '전체가 정수'일 때만 채택. 범위 밖이면 -1(새 주제).
+    // 본문 아무 곳의 숫자를 줍지 않는다("후보 2는 가깝지만 -1을 골라" → 2로 오인하는 일 방지).
     private static func parseMatch(_ text: String, count: Int) -> Int? {
         if let d = text.data(using: .utf8),
            let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
            let m = obj["match"] as? Int {
             return (m >= 0 && m < count) ? m : -1
         }
-        if let r = text.range(of: #"-?\d+"#, options: .regularExpression), let m = Int(text[r]) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let m = Int(trimmed) {
             return (m >= 0 && m < count) ? m : -1
         }
         return nil

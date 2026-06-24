@@ -223,9 +223,15 @@ struct DigestDetailView: View {
 // 정리 작성·수정 공용 에디터(마크다운 자유 작성).
 struct DigestEditorView: View {
     let title: String
-    @State var text: String
     let onSave: (String) -> Void
+    @State private var text: String
     @Environment(\.dismiss) private var dismiss
+
+    init(title: String, text: String, onSave: @escaping (String) -> Void) {
+        self.title = title
+        self.onSave = onSave
+        self._text = State(initialValue: text)
+    }
 
     var body: some View {
         NavigationStack {

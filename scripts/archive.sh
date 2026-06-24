@@ -9,7 +9,9 @@ PROJECT="LivingRecord/LivingRecord.xcodeproj"
 BUILD_DIR="build"
 ARCHIVE="$BUILD_DIR/LivingRecord.xcarchive"
 EXPORT_DIR="$BUILD_DIR/export"
-BUILD_NUMBER="$(git rev-list --count HEAD)"   # 커밋 수 = 단조 증가 빌드 번호
+# 빌드 번호: CI가 주입한 $BUILD_NUMBER 우선, 없으면 커밋 수.
+# (커밋 수는 리베이스/얕은 클론 시 역행할 수 있으니, 자동 파이프라인에선 단조 증가 값을 주입할 것.)
+BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
 
 echo "▶︎ 아카이브 (빌드 $BUILD_NUMBER)…"
 xcodebuild archive \
