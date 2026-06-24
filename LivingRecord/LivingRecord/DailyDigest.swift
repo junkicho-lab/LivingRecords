@@ -53,14 +53,14 @@ enum DailyDigest {
 
         let style = Templates.activeDirective(context: context)   // 사용자 템플릿 스타일
         let insight = await synth(
-            instruction: "너는 사려 깊은 회고 도우미다. 아래 오늘의 생각을 '단순 나열하지 말고' 흐름과 마음의 방향을 짚어 한국어로 써라. '최근 흐름'이 있으면 오늘과 연결해 무엇이 이어지고 무엇이 새로운지 언급하라. 스타일: \(style)",
+            instruction: "너는 오늘 하루를 같이 돌아보는 친구다. 쉽고 일상적인 말과 짧은 문장으로 써라. '흐름·마음의 방향' 같은 추상적·현학적 표현은 쓰지 마라. 오늘 어떤 생각을 했고 무엇이 요즘과 이어지는지·무엇이 새로운지 구체적 사실로 짚어라. 단순 나열은 말 것. 스타일: \(style)",
             input: input)
         md += (insight ?? "오늘은 \(order.joined(separator: ", "))에 대한 생각을 남겼어요.") + "\n\n"
 
         // 이어지는 흐름(결정적, 반복 신호)
         let recurring = flow.filter { $0.days >= 1 }
         if !recurring.isEmpty {
-            md += "🔁 이어지는 흐름: " + recurring.map { "\($0.name)(최근 \($0.days)일)" }.joined(separator: " · ") + "\n\n"
+            md += "🔁 며칠째 이어진 주제: " + recurring.map { "\($0.name)(최근 \($0.days)일)" }.joined(separator: " · ") + "\n\n"
         }
         md += "오늘 다룬 것: " + order.joined(separator: " · ") + "\n"
 

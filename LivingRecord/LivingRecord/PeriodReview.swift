@@ -46,7 +46,7 @@ enum PeriodReview {
         }
         if narr == nil {
             let style = Templates.activeDirective(context: context)
-            narr = await synth("너는 긴 호흡의 회고 도우미다. 아래 기간의 반복 주제와 내린 결정을 보고, 무엇이 꾸준히 이어졌고 무엇을 지속/접기로 정했는지 큰 흐름을 한국어로 짚어라. 단순 나열 금지. 스타일: \(style)", input)
+            narr = await synth("너는 긴 기간을 같이 돌아보는 친구다. 쉽고 일상적인 말과 짧은 문장으로 써라. '큰 흐름' 같은 추상적·현학적 표현은 피하고 구체적 사실 위주로. 이 기간에 어떤 주제가 꾸준히 나왔고 무엇을 이어가거나 접기로 정했는지 짚어라. 단순 나열은 말 것. 스타일: \(style)", input)
         }
 
         let df = DateFormatter(); df.dateFormat = "yyyy.M.d"; df.locale = Locale(identifier: "ko_KR")

@@ -373,7 +373,7 @@ enum WeeklyReview {
         if narr == nil {   // 클라우드 OFF·실패 → 로컬 종합
             let style = Templates.activeDirective(context: context)   // 사용자 템플릿 스타일
             narr = await synth(
-                "너는 한 주를 돌아보는 회고 도우미다. '지난 결정의 현재'가 있으면 먼저 그것부터 짚어라(지속하기로 한 게 이어졌는지, 접은 게 다시 올라왔는지). 그다음 '자주 돌아온 주제'를 단순 나열 말고, 이번 주 마음이 어디로 향했는지·무엇이 떠오르고 무엇이 식어가는지·무엇이 발전하고 무엇이 맴돌았는지 짚어라. 한국어로. 스타일: \(style)",
+                "너는 한 주를 같이 돌아보는 친구다. 쉽고 일상적인 말과 짧은 문장으로 써라. '마음의 방향·줄기·흐름' 같은 추상적·현학적 표현은 쓰지 마라. 먼저 전에 정한 것이 어떻게 됐는지 짚고(이어졌는지/조용해졌는지), 다음으로 이번 주 어떤 주제가 자주 나왔고 무엇이 늘고 무엇이 줄었는지 구체적 사실로 말하라. 단순 나열은 말 것. 한국어. 스타일: \(style)",
                 input)
         }
 
@@ -382,7 +382,7 @@ enum WeeklyReview {
         if cloud { md += "☁️ 깊은 종합(클라우드)\n\n" }
         md += "\(narr ?? localFallback)\n\n"
         if !follow.isEmpty {
-            md += "**지난 회고 이후**\n"
+            md += "**전에 정한 것들, 그 뒤로**\n"
             for f in follow.prefix(6) {
                 let mark: String
                 switch f.outcome {
@@ -397,18 +397,18 @@ enum WeeklyReview {
         }
         md += "**자주 돌아온 주제**\n"
         for c in cands.prefix(8) {
-            let ev = c.evolving == true ? " 🌱진화" : (c.evolving == false ? " 🔁맴돎" : "")
-            let tr = c.trend == .rising ? " ↑떠오름" : (c.trend == .cooling ? " ↓식어감" : "")
+            let ev = c.evolving == true ? " 🌱새로워짐" : (c.evolving == false ? " 🔁비슷한 반복" : "")
+            let tr = c.trend == .rising ? " ↑늘어남" : (c.trend == .cooling ? " ↓줄어듦" : "")
             md += "- \(c.theme.name) — \(c.days)일·\(c.count)회\(tr)\(ev)\n"
         }
         if !cooling.isEmpty {
-            md += "\n**❄️ 식어가는 줄기**\n"
+            md += "\n**❄️ 요즘 뜸해진 주제**\n"
             for c in cooling.prefix(6) {
                 md += "- \(c.theme.name) — 한때 \(c.priorCount)회, \(c.daysSinceLast)일째 조용\n"
             }
         }
         if !conns.isEmpty {
-            md += "\n**연결**\n"
+            md += "\n**서로 가까운 주제**\n"
             for c in conns.prefix(5) {
                 md += "- \(c.a.name) ↔ \(c.b.name)\(c.isNew ? " (새 연결)" : "")\n"
             }

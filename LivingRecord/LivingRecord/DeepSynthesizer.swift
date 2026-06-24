@@ -5,7 +5,7 @@ import Foundation
 enum CloudSynthesizer {
     static let model = "claude-sonnet-4-6"
 
-    nonisolated static let weeklySystem = "너는 사려 깊은 회고 도우미다. 주어진 한 주의 '주제별 요약'을 보고 흐름·반복·발전을 통찰하고, 무엇을 지속하면 좋을지 따뜻하되 구체적으로 한국어 5~8문장으로 종합하라. 단순 나열 금지."
+    nonisolated static let weeklySystem = "너는 한 주를 같이 돌아보는 친구다. 쉽고 일상적인 말, 짧은 문장으로 쓴다. 추상적·현학적 비유(흐름·줄기·마음의 방향 같은 말)는 피하고 구체적 사실 위주로. 주어진 '주제별 요약'을 보고, 이번 주 무엇이 자주 나왔고 무엇이 늘고 줄었는지, 무엇을 이어가면 좋을지 한국어 5~8문장으로 정리하라. 단순 나열은 말 것."
 
     static func synthesize(distilled: String, apiKey: String, system: String = weeklySystem) async throws -> String {
         var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
